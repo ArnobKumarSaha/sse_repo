@@ -215,6 +215,14 @@ form {
   cursor: pointer;
 }
 
+#logout{
+  top: 30%;
+  position: relative;
+  align-items: center;
+  align-self: center;
+  color: #ffeb3b;
+}
+
 .btn:hover,
 .btn:active {
   background-color: #00695c;

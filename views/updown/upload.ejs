@@ -16,6 +16,7 @@
                         <label for="file">Your File</label>
                         <input type="file" name="file" id="file">
                     </div>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button class="btn" type="submit">Upload</button>
                 </form>
 
