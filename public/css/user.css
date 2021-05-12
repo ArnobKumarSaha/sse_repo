@@ -1,0 +1,29 @@
+.user-form {
+    width: 20rem;
+    max-width: 90%;
+    margin: auto;
+    display: block;
+}
+
+.user-item {
+    width: 20rem;
+    max-width: 95%;
+    margin: 1rem;
+    background-color: darkslategray;
+    color: chocolate;
+}
+
+.user__name {
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.user__email {
+    text-align: center;
+    color: #4d4d4d;
+    margin-bottom: 0.5rem;
+}
+
+.user__description {
+    text-align: center;
+}
