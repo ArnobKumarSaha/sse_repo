@@ -20,16 +20,17 @@ exports.getUploadFile = (req, res, next) =>{
 }
 
 exports.postUploadFile = (req, res, next) =>{
-  const name = req.body.fileName;
+  const name = req.body.name;
+  const keyword = req.body.keyword;
   const file = req.file;
 
   console.log(file.path);
   // You can get the uploaded files in /files folder.
   //This is working nicely . Just need to add the path link to database.
 
-  let tempPath = file.path.split('/')[1]; //.split('-*-')[1];
+  let tempPath = file.path.split('/')[2]; //.split('-*-')[1];
 
-  return req.user.addToCart(tempPath)
+  return req.user.addToCart(tempPath, keyword)
     .then(result =>{
       res.redirect('/user/uploaded');
     });
@@ -78,7 +79,7 @@ exports.showFileById = (req, res, next) =>{
   const filePath = req.params.filePath;
   let content;
 
-  fs.readFile(path.dirname(process.mainModule.filename) + '/files/'+filePath, 'utf8' , (err, data) => {
+  fs.readFile(path.dirname(process.mainModule.filename) + '/public/files/'+filePath, 'utf8' , (err, data) => {
     if (err) {
       console.error(err);
       return;

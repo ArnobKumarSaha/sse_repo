@@ -26,18 +26,20 @@ const userSchema = new Schema({
   cart: {
     myFiles: [
       {
-        filePath: { type: String, required: true }
+        filePath: { type: String, required: true },
+        keyword: {type: String, required: true}
       }
     ]
   }
 });
 
 
-userSchema.methods.addToCart = function(filePath) {
+userSchema.methods.addToCart = function(filePath, keyword) {
   const updatedFileItems = [...this.cart.myFiles];
 
   updatedFileItems.push({
-    filePath: filePath
+    filePath: filePath,
+    keyword: keyword
   });
   const updatedCart = {
     myFiles: updatedFileItems

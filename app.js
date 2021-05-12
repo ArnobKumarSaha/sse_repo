@@ -21,7 +21,7 @@ const User = require('./models/user');
 
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'files');
+        cb(null, 'public/files');
     },
     filename: (req, file, cb) => {
         cb(null, new Date().toISOString() + '-*-' + file.originalname);
