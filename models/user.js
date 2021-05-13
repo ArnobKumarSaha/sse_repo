@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
+
 const userSchema = new Schema({
   name: {
     type: String,
@@ -15,14 +16,6 @@ const userSchema = new Schema({
     type: String,
     required: true
   },
-  /*
-  cart: {
-    myFiles: {
-      type: String,
-      required: true 
-    }
-  },*/
-
   cart: {
     myFiles: [
       {
@@ -34,17 +27,18 @@ const userSchema = new Schema({
 });
 
 
-userSchema.methods.addToCart = function(filePath, keyword) {
+userSchema.methods.addToCart = function(filePath, keywords) {
   const updatedFileItems = [...this.cart.myFiles];
 
   updatedFileItems.push({
     filePath: filePath,
-    keyword: keyword
+    keyword: keywords
   });
   const updatedCart = {
     myFiles: updatedFileItems
   };
   this.cart = updatedCart;
+
   return this.save();
 };
 
