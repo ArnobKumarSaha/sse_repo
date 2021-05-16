@@ -6,23 +6,26 @@
         <%- include('../includes/navigation.ejs') %>
 
             <main>
-                <h2>
-                    Now access to doc.
-                </h2>
-
-
                 <% if (docs.length > 0) { %>
                     <div class="grid">
                         <% for (let doc of docs) { %>
                             <article class="card user-item">
                                 <header class="card__header">
+                                    <h3 class="user__description">
+                                        Doc name = <%= doc[0] %>
+                                    </h3>
                                     <h1 class="user__name">
-                                        <%= doc[1] %>
+                                        Matched with entered keywords = <%= doc[1] %> times.
                                     </h1>
-                                    <h1 class="user__description">
-                                        Keyword = <%= doc[0] %>
-                                    </h1>
+
+                                    <h2 class="user__email">
+                                        Data Owner = <%= doc[2] %>
+                                    </h2>
                                 </header>
+
+                                <div class="card__actions">
+                                    <button class="btn" type="submit">Request to get this file</button>
+                                </div>
     
                             </article>
                             <% } %>

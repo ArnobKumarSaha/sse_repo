@@ -16,11 +16,12 @@
 .user__name {
     font-size: 1.2rem;
     text-align: center;
+    color: green
 }
 
 .user__email {
     text-align: center;
-    color: #4d4d4d;
+    color: #d36b6b;
     margin-bottom: 0.5rem;
 }
 

@@ -3,6 +3,7 @@ const KeywordIndex = require('../models/keyword_index');
 const path = require('path');
 const fs = require('fs');
 const encDec = require('../encryption-decryption');
+const user = require('../models/user');
 
 
 
@@ -37,12 +38,8 @@ exports.postUploadFile = (req, res, next) =>{
   let space_separated_keywords = keyword.split(' ');
 
 
-  //console.log("keywords in userController postUploadFile() = ", space_separated_keywords);
 
   space_separated_keywords.forEach(tmpKey =>{
-    /*console.log("keykey", tmpKey, typeof(tmpKey));
-    console.log(typeof(KeywordIndex));
-    console.log(typeof(KeywordIndex.addThisKeywordIndex));*/
 
     const keyHash = encDec.getKeywordHash(tmpKey);
 
@@ -92,86 +89,65 @@ exports.getDownloadFile = (req, res, next) =>{
 
 var freqTable = {};
 
-function calculate1(space_separated_keywords){
+// It finds out the entries from DB those are matched with searched keywords.
+// Then finds out the file path, And count the frequencies.
+async function calculate1(space_separated_keywords){
 
-  return new Promise( (resolve, reject) => {
+  freqTable = {};
 
-      console.log("calculate Function starts. ", space_separated_keywords);
+  for(let tmpKey of space_separated_keywords){
+    const keyHash = await encDec.getKeywordHash(tmpKey);
 
-      for(let tmpKey of space_separated_keywords){
-        const keyHash = encDec.getKeywordHash(tmpKey);
-        console.log(tmpKey, keyHash);
+    const keyDoc = await KeywordIndex.findOne({index_hash: keyHash});
 
-        KeywordIndex.findOne({index_hash: keyHash})
-        .then(keyDoc => {
-          console.log("keyDoc = ", keyDoc);
-          if(keyDoc){
-            let myfiles = [...keyDoc.whereItIs.myFiles];
+    //console.log("keyDoc = ", keyDoc);
+    if(keyDoc){
+      let myfiles = [...keyDoc.whereItIs.myFiles];
 
-            for(var fl of myfiles){
-              var fp = fl.filePath;
-              console.log("Type = ", typeof(fp));
+      for(var fl of myfiles){
+        var fp = fl.filePath;
 
-              if(freqTable[fp]) {freqTable[fp]++; console.log("IN true.");}
-              else { freqTable[fp] = 1; console.log("In False. ", freqTable);}
-            }
-            
-          }
-          else{
-            console.log("Inside else block!");
-          }
-        });
+        if(freqTable[fp]==1) {freqTable[fp]++; console.log("IN true.");}
+        else { freqTable[fp] = 1; console.log("In False. ", freqTable);}
       }
-      resolve();
-   });
+      
+    }
+    else{
+      console.log("Inside else block!");
+    }
+  }
 }
 var sortable = [];
+var documents = [];
+
+// It makes the array sorted in descending order. To show more matched files before the less matched files.
 function calculate2(){
-        //setTimeout(()=>{
-        // Now , sort them in descending order to get top 5.
-      return new Promise( (resolve, reject) =>{
-        
-        for (var file in freqTable) {
-            sortable.push([file, freqTable[file]]);
-        }
+  sortable = [];
+  documents = [];
+  return new Promise( (resolve, reject) =>{
+    
+    for (var file in freqTable) {
+        sortable.push([file, freqTable[file]]);
+    }
+    sortable.sort(function(a, b) {
+        return b[1] - a[1];
+    });
 
-        console.log("Printing sortable 1: ", sortable);
-
-        sortable.sort(function(a, b) {
-            return b[1] - a[1];
-        });
-
-        console.log("Printing sortable 2: ", sortable);
-
-        // This is to show the Owner of the top-matched files.
-
-        /*User.findOne({ "cart.myFiles.filePath": fp},  {name: 1} ).then(userDoc => {
-          console.log(userDoc.name);
-        })
-          .catch(err => console.log(err));*/
-        
-
-        console.log("Calculate function ends. (Before resolve) ", freqTable, typeof(freqTable) );
-        resolve(sortable);
-        console.log("Calculate function ends. (After resolve) ", freqTable, typeof(freqTable) );
-        //return sortable;
-      });
-      //}, 3000);
+    resolve(sortable);
+    //console.log("Calculate function ends. (After resolve) ", freqTable, typeof(freqTable) );
+  });
 }
 
 async function intermediateFunction(space_separated_keywords){
   console.log("At the start of intermediate function.");
-  //const documents = await calculate1(space_separated_keywords);
-  /*calculate1(space_separated_keywords).then(() =>{
-    console.log("Here I am !");
-    calculate2().then(documents =>{
-      console.log("Before the return statement of intermediate function. ", documents);
-      return documents;
-    });
-  })*/
   await calculate1(space_separated_keywords);
   await calculate2();
-  console.log("Before return , and after calculates called, in intermediate");
+
+  for(let doc of sortable){
+    const userDoc = await User.findOne({ "cart.myFiles.filePath": doc[0]},  {name: 1} );
+    doc.push(userDoc._id);
+    documents.push(doc);
+  }
   return;
 }
 
@@ -181,23 +157,12 @@ exports.postDownloadFile = async (req, res, next) =>{
 
   let space_separated_keywords = keyword.split(' ');
 
-
-  /*intermediateFunction(space_separated_keywords)
-    .then( freqTable => {
-      console.log("keywords in userController postDownloadFile() = ", space_separated_keywords);
-      console.log(freqTable);
-    
-      res.send("Into post Download File route.");
-    })
-    .catch(err => console.log(err) );*/
-
   await intermediateFunction(space_separated_keywords);
-  console.log("In postDownloadFunction ", sortable);
-  
+
   res.render('updown/searchResult', {
     pageTitle: "Search result",
     path: "/user/searchResult",
-    docs: sortable
+    docs: documents
   });
 }
 
