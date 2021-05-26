@@ -13,17 +13,14 @@
                         <article class="card user-item">
                             <header class="card__header">
                                 <h1 class="user__name">
-                                    <%= file.filePath %>
-                                </h1>
-                                <h1 class="user__description">
-                                    Keyword = <%= file.keyword %>
+                                    File Id : <%= file.myFileId %>
                                 </h1>
                             </header>
 
 
                             <div class="card__actions">
-                                <a href="/user/show-file/<%= file.filePath %>" class="btn">Show</a> 
-                                <form action="/user/delete-file/<%= file.filePath %>" method="POST">
+                                <a href="/user/show-file/<%= file.myFileId %>" class="btn">Show</a> 
+                                <form action="/user/delete-file/<%= file.myFileId %>" method="POST">
                                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                     <button class="btn" type="submit">Delete</button>
                                 </form>

@@ -1,5 +1,0 @@
-1. A Blockchain-Based Framework for Data Sharing
-With Fine-Grained Access Control in
-Decentralized Storage Systems   2
-.ProvChainABlockchain-basedDataProvenanceArchitectureinCloud.   3
-.Blockchain-Based Public Integrity Veriﬁcation for Cloud Storage against Procrastinating Auditors.  

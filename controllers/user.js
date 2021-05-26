@@ -1,9 +1,12 @@
 const User = require('../models/user');
 const KeywordIndex = require('../models/keyword_index');
+const File = require('../models/file');
+
 const path = require('path');
 const fs = require('fs');
 const encDec = require('../encryption-decryption');
-const user = require('../models/user');
+const { ObjectID } = require('bson');
+const { update } = require('../models/user');
 
 
 
@@ -22,61 +25,129 @@ exports.getFrontPage = (req, res, next) => {
 exports.getUploadFile = (req, res, next) =>{
   res.render("updown/upload", {
     pageTitle: "Upload a file",
-    path: "/user/upload"
+    path: "/user/upload",
+    errorMessage: ""
   });
 }
 
-exports.postUploadFile = (req, res, next) =>{
+var matchCount = 0;
+var bestMatchFiles = {};
+
+exports.postUploadFile = async (req, res, next) =>{
   const name = req.body.name;
   const keyword = req.body.keyword;
   const file = req.file;
+  let tempPath = file.path;
 
-  console.log(file.path);
 
-  let tempPath = file.path.split('/')[2]; //.split('-*-')[1];
-
+  // encrypt the file, store it to the same path
+  encDec.getEncryptFile(tempPath);
+  tempPath = file.path.split('/')[2];
+  // this is to store in the user.cart.myFiles
+  let encryptedKeyword = encDec.getEncryptionKeyword(keyword);
   let space_separated_keywords = keyword.split(' ');
 
 
 
-  space_separated_keywords.forEach(tmpKey =>{
-
+  const numberOfKeyword = space_separated_keywords.length;
+  let HashedKeywordSet = [];
+  matchCount = 0;
+  // In this for loop, I have just counted the files-frequency (those are related with keywords) in bestMatchFiles container.
+  for(let tmpKey of space_separated_keywords){
     const keyHash = encDec.getKeywordHash(tmpKey);
-
-    KeywordIndex.findOne({index_hash: keyHash}).then(keyDoc => {
-      if(keyDoc){
-        // If the index is already there.
-        console.log("I am inside keyDoc true in postUpload of userController.");
-        let newMyFiles = [...keyDoc.whereItIs.myFiles];
-        newMyFiles.push({
-          filePath: tempPath
-        });
-
-        const updatedList = {
-          myFiles: newMyFiles
-        };
-        keyDoc.whereItIs = updatedList;
-        keyDoc.save();
+    HashedKeywordSet.push(keyHash);
+    const keyDoc = await KeywordIndex.findOne({index_hash:keyHash});
+    if(keyDoc){
+      // which files contain this key ..
+      let myfiles = [...keyDoc.whereItIs.myFiles];
+      for(var fl of myfiles){
+        var f = fl.filePath;
+        if(bestMatchFiles[f]>=1) {bestMatchFiles[f]++;}
+        else {bestMatchFiles[f]=1;}
       }
-      else{
-        let newKey = new KeywordIndex({
-          index_hash: keyHash,
-          whereItIs: {
-            myFiles: [ {filePath: tempPath} ]
-          }
-        });
-        newKey.save();
+    }
+  }
+
+
+  // which file has most common keyword set with the currently uploaded file.
+  for (let [key,value] of Object.entries(bestMatchFiles) ){
+    console.log('printing :', key, value);
+    matchCount = Math.max(value, matchCount);
+  }
+  let decide = false;
+  for (let [key,value] of Object.entries(bestMatchFiles) ){
+    if(matchCount == value){
+      const matchedFile = await File.findOne({filePath: key});
+      if(matchedFile.numberOfKeyword == HashedKeywordSet.length){
+        decide = true;
+      }
+    }
+  }
+
+
+  if(matchCount == HashedKeywordSet.length && decide){
+    //keyword string fully matched
+    return res.status(422).render('updown/upload', {
+      path: '/upload',
+      pageTitle: 'Upload a file',
+      errorMessage: "Keyword fully Matched!!!",
+      oldInput: {
+        name: name,
+        keyword: keyword,
+        file: file
       }
     });
+  }
+
+
+
+  // Code is here ... That means all keywords didn't matched.
+  // In this for loop, Just saving or updating the KewordIndex table.
+  for(let keyHash of HashedKeywordSet){
+    const keyDoc = await KeywordIndex.findOne({index_hash: keyHash});
+    if(keyDoc){
+      // If the index is already there. Just update the keyDoc.whereItIs.myFiles array.
+      let newMyFiles = [...keyDoc.whereItIs.myFiles];
+      newMyFiles.push({
+        filePath: tempPath
+      });
+
+      const updatedList = {
+        myFiles: newMyFiles
+      };
+      keyDoc.whereItIs = updatedList;
+      keyDoc.save();
+    }
+    else{
+      // If the index is not in the db, then create a new one.
+      let newKey = new KeywordIndex({
+        index_hash: keyHash,
+        whereItIs: {
+          myFiles: [ {filePath: tempPath} ]
+        }
+      });
+      newKey.save();
+    }
+  }
+
+
+
+
+  // Pushing or updating to  1) File table. &  2) User table.
+  const newFile = new File({
+    filePath: tempPath,
+    keyword: encryptedKeyword,
+    numberOfKeyword: numberOfKeyword
   });
-
-
-
-  return req.user.addToCart(tempPath, keyword)
+  let fileId = await newFile.save();
+  fileId = fileId._id;
+  // Now add this file to the user cart.
+  return req.user.addToCart(fileId)
     .then(result =>{
       res.redirect('/user/uploaded');
     });
-};
+
+  };
 
 // About Download file ..................................................................
 
@@ -107,8 +178,8 @@ async function calculate1(space_separated_keywords){
       for(var fl of myfiles){
         var fp = fl.filePath;
 
-        if(freqTable[fp]==1) {freqTable[fp]++; console.log("IN true.");}
-        else { freqTable[fp] = 1; console.log("In False. ", freqTable);}
+        if(freqTable[fp]==1) {freqTable[fp]++;}
+        else { freqTable[fp] = 1;}
       }
       
     }
@@ -121,7 +192,7 @@ var sortable = [];
 var documents = [];
 
 // It makes the array sorted in descending order. To show more matched files before the less matched files.
-function calculate2(){
+/*function calculate2(){
   sortable = [];
   documents = [];
   return new Promise( (resolve, reject) =>{
@@ -136,6 +207,17 @@ function calculate2(){
     resolve(sortable);
     //console.log("Calculate function ends. (After resolve) ", freqTable, typeof(freqTable) );
   });
+}*/
+
+function calculate2(){
+  sortable = [];
+  documents = [];
+  for (var file in freqTable) {
+      sortable.push([file, freqTable[file]]);
+  }
+  sortable.sort(function(a, b) {
+      return b[1] - a[1];
+  });
 }
 
 async function intermediateFunction(space_separated_keywords){
@@ -143,8 +225,15 @@ async function intermediateFunction(space_separated_keywords){
   await calculate1(space_separated_keywords);
   await calculate2();
 
+  console.log(sortable);
+
   for(let doc of sortable){
-    const userDoc = await User.findOne({ "cart.myFiles.filePath": doc[0]},  {name: 1} );
+    //const userDoc = await User.findOne({ "cart.myFiles.filePath": doc[0]},  {name: 1} );
+    const fileDoc = await File.findOne({ filePath: doc[0]});
+    console.log("fileDoc = ", fileDoc);
+    console.log(fileDoc._id);
+    const userDoc = await User.findOne({ "cart.myFiles.myFileId": fileDoc._id} );
+    console.log("useDoc = ", userDoc);
     doc.push(userDoc._id);
     documents.push(doc);
   }
@@ -162,7 +251,8 @@ exports.postDownloadFile = async (req, res, next) =>{
   res.render('updown/searchResult', {
     pageTitle: "Search result",
     path: "/user/searchResult",
-    docs: documents
+    docs: documents,
+    errorMessage: ""
   });
 }
 
@@ -199,31 +289,85 @@ exports.getDownloadedFiles = (req, res, next) =>{
 // Showing and Delete part........................................................
 
 exports.showFileById = (req, res, next) =>{
-  const filePath = req.params.filePath;
-  let content;
+  const fileId = req.params.myFileId;
 
-  fs.readFile(path.dirname(process.mainModule.filename) + '/public/files/'+filePath, 'utf8' , (err, data) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-    console.log(data);
+  console.log("showFileById : fileId = ", fileId);
 
-    res.render("updown/showFile", {
-      pageTitle: "Show File",
-      path: "/user/uploaded",
-      fileContent: data
+  File.findById(ObjectID(fileId)).then((theFile) => {
+    const filePath = theFile.filePath;
+    let content;
+  
+    fs.readFile(path.dirname(process.mainModule.filename) + '/public/files/'+filePath, 'utf8' , (err, data) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log(data);
+  
+      res.render("updown/showFile", {
+        pageTitle: "Show File",
+        path: "/user/uploaded",
+        fileContent: data
+      });
     });
+  })
+}
+
+exports.deleteFile = async (req, res, next) => {
+  const fileId = req.params.myFileId;
+
+  const theFile = await File.findOne({_id: fileId});
+
+  await File.deleteOne({_id: theFile._id});
+  console.log('successfully deleted !');
+
+  return req.user.deleteFromCart(fileId)
+  .then(result =>{
+    res.redirect('/user/uploaded');
   });
 }
 
-exports.deleteFile = (req, res, next) => {
-  console.log("IN the delete route.");
 
-  const filePath = req.params.filePath;
+exports.requestFile = async (req, res, next) =>{
+  const ownerId = req.params.ownerId;
+  const fileName = req.params.fileName;
 
-  return req.user.deleteFromCart(filePath)
-  .then(result =>{
-    res.redirect('/user/uploaded');
+  console.log("requesting file begins");
+  console.log(ownerId, fileName);
+
+  if(req.user._id == ownerId){
+    return res.render('updown/searchResult', {
+      pageTitle: "Search result",
+      path: "/user/searchResult",
+      docs: documents,
+      errorMessage: "This is your file man! "
+    });
+  }
+
+  const theFile = await File.findOne({filePath: fileName});
+
+  const owner = await User.findOne({_id: ownerId});
+
+  const updatedNotificationItems = [...owner.reqs.notifications];
+
+  console.log("theFile = ", theFile, "owner = ", owner, "updatedNoti = ", updatedNotificationItems);
+
+  updatedNotificationItems.push({
+    requesterId: req.user._id,
+    requestedFileId: theFile._id
+  });
+  const updatedReqs = {
+    notifications: updatedNotificationItems
+  };
+  console.log("updated noti = ", updatedNotificationItems, "updated reqs = ", updatedReqs);
+  owner.reqs = updatedReqs;
+  await owner.save();
+
+  console.log('Done with reques file.');
+  res.render('updown/searchResult', {
+    pageTitle: "Search result",
+    path: "/user/searchResult",
+    docs: documents,
+    errorMessage: "Requset has been sent to the DataOwner. "
   });
 }

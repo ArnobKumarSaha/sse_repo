@@ -19,20 +19,26 @@ const userSchema = new Schema({
   cart: {
     myFiles: [
       {
-        filePath: { type: String, required: true },
-        keyword: {type: String, required: true}
+        myFileId: {type: Schema.Types.ObjectId, required: true}
+      }
+    ]
+  },
+  reqs: {
+    notifications: [
+      {
+        requesterId: {type: Schema.Types.ObjectId, required: true},
+        requestedFileId: {type: Schema.Types.ObjectId, required: true}
       }
     ]
   }
 });
 
 
-userSchema.methods.addToCart = function(filePath, keywords) {
+userSchema.methods.addToCart = function(fileId) {
   const updatedFileItems = [...this.cart.myFiles];
 
   updatedFileItems.push({
-    filePath: filePath,
-    keyword: keywords
+    myFileId: fileId
   });
   const updatedCart = {
     myFiles: updatedFileItems
@@ -42,9 +48,9 @@ userSchema.methods.addToCart = function(filePath, keywords) {
   return this.save();
 };
 
-userSchema.methods.deleteFromCart = function(filePath){
+userSchema.methods.deleteFromCart = function(fileId){
   const updatedCartItems = this.cart.myFiles.filter(item => {
-    return item.filePath !== filePath;
+    return item.myFileId != fileId;
   });
   this.cart.myFiles = updatedCartItems;
   return this.save();

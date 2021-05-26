@@ -6,6 +6,11 @@
         <%- include('../includes/navigation.ejs') %>
 
             <main>
+                <% if (errorMessage) { %>
+                    <div class="user-message user-message--error"><%= errorMessage %></div>
+                <% } %>
+
+                
                 <% if (docs.length > 0) { %>
                     <div class="grid">
                         <% for (let doc of docs) { %>
@@ -24,7 +29,12 @@
                                 </header>
 
                                 <div class="card__actions">
-                                    <button class="btn" type="submit">Request to get this file</button>
+
+                                    <form action="/user/request-file/<%= doc[2] %>/<%= doc[0] %>" method="POST">
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                        <button class="btn" type="submit">Request to get this file</button>
+                                    </form>
+
                                 </div>
     
                             </article>

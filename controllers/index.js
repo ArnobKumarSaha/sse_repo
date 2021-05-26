@@ -141,6 +141,9 @@ exports.postSignup = (req,res, next) => {
         name: name,
         cart: {
           myFiles: []
+        },
+        reqs: {
+          notifications: []
         }
       });
       return user.save();

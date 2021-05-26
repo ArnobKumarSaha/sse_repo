@@ -17,8 +17,10 @@ router.get('/uploaded', isAuth, userController.getUploadedFiles);
 router.get('/downloaded', userController.getDownloadedFiles);
 
 
-router.get('/show-file/:filePath', userController.showFileById);
+router.get('/show-file/:myFileId', userController.showFileById);
 
-router.post('/delete-file/:filePath', userController.deleteFile);
+router.post('/delete-file/:myFileId', userController.deleteFile);
+
+router.post('/request-file/:ownerId/:fileName', userController.requestFile);
 
 module.exports = router;

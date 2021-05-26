@@ -6,6 +6,10 @@
         <%- include('../includes/navigation.ejs') %>
 
             <main>
+
+                <% if (errorMessage) { %>
+                    <div class="user-message user-message--error"><%= errorMessage %></div>
+                <% } %>
                 
                 <form class="login-form" action="/user/upload" method="POST" enctype="multipart/form-data">
                     <div class="form-control">
