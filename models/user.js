@@ -16,6 +16,10 @@ const userSchema = new Schema({
     type: String,
     required: true
   },
+  publicKey: {
+    type: String,
+    required: true
+  },
   cart: {
     myFiles: [
       {

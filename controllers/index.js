@@ -4,6 +4,10 @@ const { validationResult } = require('express-validator');
 
 const User = require('../models/user');
 
+const encDec = require('../EncryptDecrypt-v2');
+
+const fs = require('fs');
+
 
 
 exports.getFrontPage = (req,res, next) => {
@@ -109,8 +113,8 @@ exports.getSignup = (req,res, next) => {
     });
 }
 
-exports.postSignup = (req,res, next) => {
-    const email = req.body.email;
+exports.postSignup = async (req,res, next) => {
+  const email = req.body.email;
   const password = req.body.password;
   const confirmPassword = req.body.confirmPassword;
   const name = req.body.name;
@@ -132,28 +136,30 @@ exports.postSignup = (req,res, next) => {
     });
   }
   // If no error, encrypt the password, and save the user into database.
-  bcrypt
-    .hash(password, 12)
-    .then(hashedPassword => {
-      const user = new User({
-        email: email,
-        password: hashedPassword,
-        name: name,
-        cart: {
-          myFiles: []
-        },
-        reqs: {
-          notifications: []
-        }
-      });
-      return user.save();
-    })
-    .then(result => {
-      res.redirect('/login');
-    })
-    .catch(err => {
-      console.log(err);
-    });
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  let pbKey = await fs.readFileSync('./keys/publicKey.key');
+
+  const user = new User({
+    email: email,
+    password: hashedPassword,
+    name: name,
+    cart: {
+      myFiles: []
+    },
+    reqs: {
+      notifications: []
+    },
+    publicKey: pbKey
+  });
+
+  try{
+    const result = await user.save();
+    res.redirect('/login');
+  }
+  catch(err){
+    console.log(err);
+  };
 }
 
 exports.postLogout = (req, res, next) => {

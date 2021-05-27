@@ -19,6 +19,9 @@ const flash = require('connect-flash'); // to help users by showing what error o
 const User = require('./models/user');
 
 
+const encDec = require('./EncryptDecrypt-v2');
+
+
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'public/files');
@@ -28,7 +31,7 @@ const fileStorage = multer.diskStorage({
     }
 });
 
-
+encDec.generateKeys();
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: false }));
