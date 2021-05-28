@@ -10,7 +10,7 @@ const indexSchema = new Schema({
   whereItIs: {
     myFiles: [
       {
-        filePath: { type: String, required: true }
+        fileId: { type: Schema.Types.ObjectId, ref: 'File', required: true }
       }
     ]
   }

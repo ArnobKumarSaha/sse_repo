@@ -8,6 +8,13 @@ const fileSchema = new Schema({
          type: String,
          required: true
     },
+    store: {
+        keywordsList: [
+          {
+            keyHashId: {type: Schema.Types.ObjectId, ref: 'Keyword-Index', required: true}
+          }
+        ]
+    },
     keyword: {
         type: String,
         required: true

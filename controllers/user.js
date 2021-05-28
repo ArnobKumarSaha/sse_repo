@@ -7,6 +7,7 @@ const fs = require('fs');
 const encDec = require('../EncryptDecrypt-v2');
 const { ObjectID } = require('bson');
 const { update } = require('../models/user');
+const { listeners } = require('process');
 
 
 
@@ -78,7 +79,7 @@ exports.postUploadFile = async (req, res, next) =>{
   for (let [key,value] of Object.entries(bestMatchFiles) ){
     if(matchCount == value){
       const matchedFile = await File.findOne({filePath: key});
-      if(matchedFile.numberOfKeyword == HashedKeywordSet.length){
+      if(matchedFile &&  matchedFile.numberOfKeyword == HashedKeywordSet.length){
         decide = true;
       }
     }
@@ -103,13 +104,36 @@ exports.postUploadFile = async (req, res, next) =>{
 
   // Code is here ... That means all keywords didn't matched.
   // In this for loop, Just saving or updating the KewordIndex table.
+  //*****************************Upper part is about checking, Lower part is about saving/updating*******************************
+
+
+  // Part 1:  Just create a new File
+  let newSavedFile = new File({
+    filePath: tempPath,
+    keyword: encryptedKeyword,
+    numberOfKeyword: numberOfKeyword,
+    store: {
+      keywordsList: []
+    }
+  });
+  newSavedFile = await newSavedFile.save();
+  console.log("\n newSavedFile1 = ", newSavedFile,"\n");
+
+
+
+
+  // Part 2: In this for loop, Just saving or updating the KewordIndex table.
+  let keyList = []
+
   for(let keyHash of HashedKeywordSet){
-    const keyDoc = await KeywordIndex.findOne({index_hash: keyHash});
+    //const keyDoc = await KeywordIndex.findOne({index_hash: keyHash});
+    let keyDoc = await KeywordIndex.findOne({index_hash: keyHash});
     if(keyDoc){
       // If the index is already there. Just update the keyDoc.whereItIs.myFiles array.
       let newMyFiles = [...keyDoc.whereItIs.myFiles];
       newMyFiles.push({
-        filePath: tempPath
+        //filePath: tempPath
+        fileId: newSavedFile._id
       });
 
       const updatedList = {
@@ -123,31 +147,68 @@ exports.postUploadFile = async (req, res, next) =>{
       let newKey = new KeywordIndex({
         index_hash: keyHash,
         whereItIs: {
-          myFiles: [ {filePath: tempPath} ]
+          //myFiles: [ {filePath: tempPath} ]
+          myFiles: [ {fileId: newSavedFile._id} ]
         }
       });
-      newKey.save();
+      //newKey.save();
+      newKey = await newKey.save();
+      keyDoc = newKey;
     }
+    keyList.push({keyHashId: keyDoc._id});
+  }
+  console.log("\n keyList = ", keyList, "\n");
+
+
+
+  // Part 3: Updating the Files's keyword list.
+  const updatedStore = {
+    keywordsList: keyList
+  };
+  console.log("updatedStore = ", updatedStore);
+
+  const toCheckList = [...newSavedFile.store.keywordsList];
+
+  console.log("ToCheckList 1 = ", toCheckList);
+
+  for(let obj of keyList){
+    toCheckList.push(obj);
   }
 
+  console.log("ToCheckList 2 = ", toCheckList);
+
+  console.log("newSavedFile.store = ", newSavedFile.store);
+  newSavedFile.store = updatedStore;
+  console.log("newSavedFile.store = ", newSavedFile.store);
+  console.log("\n newSavedFile2 = ", newSavedFile,"\n");
+
+  newSavedFile = await newSavedFile.save();
+  console.log("\n newSavedFile3 = ", newSavedFile,"\n");
 
 
-
-  // Pushing or updating to  1) File table. &  2) User table.
-  const newFile = new File({
-    filePath: tempPath,
-    keyword: encryptedKeyword,
-    numberOfKeyword: numberOfKeyword
+/*
+  const updatedFileItems = [...this.cart.myFiles];
+  updatedFileItems.push({
+    myFileId: fileId
   });
-  let fileId = await newFile.save();
-  fileId = fileId._id;
-  // Now add this file to the user cart.
-  return req.user.addToCart(fileId)
+
     .then(result =>{
       res.redirect('/user/uploaded');
     });
 
   };
+  const updatedCart = {
+    myFiles: updatedFileItems
+  };
+  this.cart = updatedCart;
+  return this.save();
+*/
+
+
+
+
+// Part 4: Updating to  User table.
+return req.user.addToCart(newSavedFile._id)  
 
 // About Download file ..................................................................
 
@@ -317,6 +378,41 @@ exports.deleteFile = async (req, res, next) => {
   const fileId = req.params.myFileId;
 
   const theFile = await File.findOne({_id: fileId});
+
+  //Going through the keyword list of this file, and update them accordingly.
+  for(let hashId of theFile.store.keywordsList){
+    console.log("_id & hashId from file.store are = ", hashId);
+    let keyHash = await KeywordIndex.findOne({_id: hashId.keyHashId});
+
+    console.log("\n keyHash = ", keyHash, "\n");
+
+    /*const updatedList = await keyHash.whereItIs.myFiles.filter(item => {
+      return item.fileId != theFile._id;
+    });*/
+
+    let updatedList = [];
+    for(let something of keyHash.whereItIs.myFiles){
+      if(something.fileId.equals(theFile._id) ){
+        console.log('\n If statement\n');
+      }
+      else{
+        updatedList.push(something);
+      }
+    }
+    console.log(updatedList);
+    const updatedWhereItIs = {
+      myFiles: updatedList
+    }
+    keyHash.whereItIs = updatedWhereItIs;
+    keyHash = await keyHash.save();
+
+    if(updatedList.length == 0){
+      await KeywordIndex.deleteOne({_id: hashId.keyHashId});
+    }
+  }
+
+  // Now, delete from fileSystem and then the file itself
+  fs.unlinkSync(path.resolve('./') + '/public/files/' + theFile.filePath);
 
   await File.deleteOne({_id: theFile._id});
   console.log('successfully deleted !');

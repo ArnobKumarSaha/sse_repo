@@ -23,7 +23,7 @@ const userSchema = new Schema({
   cart: {
     myFiles: [
       {
-        myFileId: {type: Schema.Types.ObjectId, required: true}
+        myFileId: {type: Schema.Types.ObjectId, ref: 'File', required: true}
       }
     ]
   },
