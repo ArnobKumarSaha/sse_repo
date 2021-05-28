@@ -138,6 +138,8 @@ exports.postSignup = async (req,res, next) => {
   // If no error, encrypt the password, and save the user into database.
   const hashedPassword = await bcrypt.hash(password, 12);
 
+  encDec.generateKeys();
+
   let pbKey = await fs.readFileSync('./keys/publicKey.key');
 
   const user = new User({

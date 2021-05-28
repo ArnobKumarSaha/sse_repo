@@ -1,34 +1,45 @@
 var express = require('express');
-const userController = require('../controllers/user');
+const userController1 = require('../controllers/userUpDownDel');
+const userController2 = require('../controllers/userShowReq');
 const isAuth = require('../middleware/is-auth');
 var router = express.Router();
 
-/* GET users listing. */
-router.get('/', userController.getFrontPage);
+// Upload - Download related.
+router.get('/', userController1.getFrontPage);
 
-router.get('/upload', userController.getUploadFile);
-router.post('/upload', userController.postUploadFile);
+router.get('/upload', userController1.getUploadFile);
+router.post('/upload', userController1.postUploadFile);
 
-router.get('/download', userController.getDownloadFile);
-router.post('/download', userController.postDownloadFile);
+router.get('/download', userController1.getDownloadFile);
+router.post('/download', userController1.postDownloadFile);
 
 
-router.get('/uploaded', isAuth, userController.getUploadedFiles);
-router.get('/downloaded', userController.getDownloadedFiles);
+router.get('/uploaded', isAuth, userController1.getUploadedFiles);
+router.get('/downloaded', userController1.getDownloadedFiles);
 
-router.get('/notification', userController.getAllNotifications);
+router.post('/delete-file/:myFileId', userController1.deleteFile);
 
-router.get('/show-file/:myFileId', userController.showFileById);
 
-router.get('/show-decrypted-content/:request.fileContent', userController.showDecryptedFileContent);
 
-router.get('/request', userController.getAllRequests);
 
-router.post('/delete-file/:myFileId', userController.deleteFile);
+// Show and  request-handling related.
 
-router.post('/request-file/:ownerId/:fileName', userController.requestFile);
 
-router.post('/grant-permission/:requesterId/:requestedFileId', userController.grantPermission);
-router.post('/deny-permission/:requesterId', userController.denyPermission);
+router.get('/show-file/:myFileId', userController2.showFileById);
+
+router.get('/notification', userController2.getAllNotifications);
+
+
+router.get('/show-decrypted-content/:request.fileContent', userController2.showDecryptedFileContent);
+
+router.get('/request', userController2.getAllRequests);
+
+
+
+router.post('/request-file/:ownerId/:fileName', userController2.requestFile);
+
+router.post('/grant-permission/:requesterId/:requestedFileId', userController2.grantPermission);
+
+router.post('/deny-permission/:requesterId', userController2.denyPermission);
 
 module.exports = router;
