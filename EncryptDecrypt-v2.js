@@ -59,10 +59,10 @@ exports.getKeywordHash = (keyword) => {
     return keyword_hash
   };
 
-exports.getEncryptionKeyword = (publicKey, keyword) => {    
+exports.getEncryptionKeyword = (pbKey, keyword) => {     //send publickey as a parameter 
   //Store publicKey.key as key file
   //Also pass publicKey.key the file here as a parameter
-  let pbKey = fs.readFileSync('./keys/publicKey.key');
+  //let pbKey = fs.readFileSync('./keys/publicKey.key');
 
   const encryptedKeyword = crypto.publicEncrypt(
     {
@@ -75,7 +75,7 @@ exports.getEncryptionKeyword = (publicKey, keyword) => {
   )
 
   //console.log("encypted data: ", encryptedKeyword.toString('hex'));     
-  return encryptedKeyword.encryptedKeyword.toString('hex');
+  return encryptedKeyword.toString('hex');
 }
 
 
@@ -96,7 +96,7 @@ exports.getDecryptionKeyword = (encryptedKeyword) => {
   return keyword.toString();
 };
 
-exports.getEncryptFile = (filePath) => {      
+exports.getEncryptFile = (/* pbKey,  */filePath) => {      
   //Store publicKey.key as key file
   //Also pass publicKey.key the file here as a parameter
   let pbKey = fs.readFileSync('./keys/publicKey.key');
@@ -121,10 +121,40 @@ exports.getEncryptFile = (filePath) => {
   });
 };
 
+exports.getEncryptFileV2 = (pbKey, filePath) => {      
+  //Store publicKey.key as key file
+  //Also pass publicKey.key the file here as a parameter
+  //let pbKey = fs.readFileSync('./keys/publicKey.key');
+
+  fs.readFile(filePath, "utf-8", (err, data) => {
+
+    const encryptedData = crypto.publicEncrypt(
+      {
+        key: pbKey,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        oaepHash: "sha256",
+      },
+      
+      Buffer.from(data)
+    )
+
+    fs.writeFile(filePath, encryptedData, (error) => {
+      if (error) console.log(error);
+      //console.log(encryptedData);
+      console.log("File Successfully Encrypted."); 
+    });
+  });
+};
+
 exports.getDecryptFile = (filePath) => {
   let prKey = fs.readFileSync('./keys/privateKey.key');
+  const plainDataFilePath = './temp-file/decryptedFile.txt';
 
-  fs.readFile(filePath, (err, encryptedData) => {
+  console.log(filePath);
+  console.log(fs.readFileSync('./public/files/'+filePath)); //its wrong completely
+  const tempPath = './public/files/'+ filePath;
+
+  fs.readFile(tempPath, (err, encryptedData) => {
     const decryptedData = crypto.privateDecrypt(
       {
         key: prKey,
@@ -134,10 +164,13 @@ exports.getDecryptFile = (filePath) => {
       },
       encryptedData
     )
-    fs.writeFile(filePath, decryptedData , (error) => {
+     fs.writeFile(plainDataFilePath, decryptedData , (error) => {
       if (error) console.log(error);
-      //console.log(decryptedData);
+      console.log(decryptedData);
       console.log("Successfully decrypted.");
-    });
-  });
+    }); 
+
+  });  
+  
+  return plainDataFilePath;
 };

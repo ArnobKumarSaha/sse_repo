@@ -4,7 +4,7 @@ const File = require('../models/file');
 
 const path = require('path');
 const fs = require('fs');
-const encDec = require('../encryption-decryption');
+const encDec = require('../EncryptDecrypt-v2');
 const { ObjectID } = require('bson');
 const { update } = require('../models/user');
 
@@ -41,10 +41,10 @@ exports.postUploadFile = async (req, res, next) =>{
 
 
   // encrypt the file, store it to the same path
-  encDec.getEncryptFile(tempPath);
+  encDec.getEncryptFile(/* req.user.publicKey, */ tempPath);
   tempPath = file.path.split('/')[2];
   // this is to store in the user.cart.myFiles
-  let encryptedKeyword = encDec.getEncryptionKeyword(keyword);
+  let encryptedKeyword = encDec.getEncryptionKeyword(req.user.publicKey, keyword);
   let space_separated_keywords = keyword.split(' ');
 
 
@@ -354,7 +354,8 @@ exports.requestFile = async (req, res, next) =>{
 
   updatedNotificationItems.push({
     requesterId: req.user._id,
-    requestedFileId: theFile._id
+    requestedFileId: theFile._id,
+    decided: false
   });
   const updatedReqs = {
     notifications: updatedNotificationItems
@@ -370,4 +371,99 @@ exports.requestFile = async (req, res, next) =>{
     docs: documents,
     errorMessage: "Requset has been sent to the DataOwner. "
   });
+}
+
+
+exports.grantPermission = async (req, res, next) =>{
+  const requesterId = req.params.requesterId;
+  const requestedFileId = req.params.requestedFileId;
+
+  const theFile = await File.findOne({_id: requestedFileId});
+  const requester = await User.findOne({_id: requesterId});
+
+  console.log("theFile = ", theFile, "owner = ", requester);
+
+
+  const plainDataFilePath = await encDec.getDecryptFile(theFile.filePath); //return output dont write
+  await encDec.getEncryptFileV2(requester.publicKey, plainDataFilePath); 
+
+
+  let filePath = plainDataFilePath.split('/')[2];
+  //console.log(filePath);
+
+  const updatedRequestedItems = [...requester.dcart.allRequests];
+
+  updatedRequestedItems.push({
+    isAccept: true,
+    ownerId: req.user._id,
+    requestedFileId: theFile._id,
+    fileContent: filePath
+  });
+  //console.log(updatedRequestedItems);
+  const updatedAllReqs = {
+    allRequests: updatedRequestedItems
+  };
+  //console.log(updatedAllReqs);
+  requester.dcart = updatedAllReqs;
+  await requester.save();
+
+  //need to change
+  console.log('Done with Grant Permission.');
+  res.redirect('/user/notification');
+}
+
+exports.denyPermission = async (req, res, next) =>{
+  const requesterId = req.params.requesterId;
+
+  const requester = await User.findOne({_id: requesterId});
+
+  const updatedRequestedItems = [...requester.dcart.allRequests];
+
+  //console.log(updatedRequestedItems);
+  updatedRequestedItems.push({
+    isAccept: false,
+    ownerId: req.user._id
+    //requestedFileId: ,
+    //fileContent: 
+  });
+  const updatedAllReqs = {
+    allRequests: updatedRequestedItems
+  };
+
+  requester.dcart = updatedAllReqs;
+  await requester.save();
+
+  //need to change
+  console.log('Done with Grant Permission.');
+  res.redirect('/user/notification');
+}
+
+exports.getAllNotifications = (req, res, next) =>{
+  User.findOne({_id: req.user._id})
+  .then(user =>{
+    const notifications = user.reqs.notifications;
+    res.render("updown/notification",{
+      pageTitle: "Notifications",
+      path: "/user/notification",
+      notifications: notifications
+    })
+  })
+}
+
+exports.getAllRequests = (req, res, next) =>{
+  User.findOne({_id: req.user._id})
+  .then(user =>{
+    const requests = user.dcart.allRequests;
+    res.render("updown/request",{
+      pageTitle: "All Requests",
+      path: "/user/request",
+      requests: requests
+    })
+  })
+}
+
+exports.showDecryptedFileContent = (req, res, next) =>{
+  const content = req.params.fileContent;
+
+  
 }

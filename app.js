@@ -31,7 +31,7 @@ const fileStorage = multer.diskStorage({
     }
 });
 
-encDec.generateKeys();
+//encDec.getEncryptFile('rosalind.txt'/* '2021-05-27T18:21:22.710Z-*-solive.txt' */);
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: false }));

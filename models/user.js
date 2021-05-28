@@ -31,7 +31,18 @@ const userSchema = new Schema({
     notifications: [
       {
         requesterId: {type: Schema.Types.ObjectId, required: true},
-        requestedFileId: {type: Schema.Types.ObjectId, required: true}
+        requestedFileId: {type: Schema.Types.ObjectId, required: true},
+        decided: {type: Boolean, required: true}
+      }
+    ]
+  },
+  dcart: {
+    allRequests: [
+      {
+        isAccept: {type: Boolean, required: true},
+        ownerId: {type: Schema.Types.ObjectId, required: false},
+        requestedFileId: {type: Schema.Types.ObjectId, required: false},
+        fileContent: {type: String, required: false}
       }
     ]
   }

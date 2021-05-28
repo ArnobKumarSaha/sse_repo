@@ -18,6 +18,12 @@
             <li class="main-header__item">
                 <a class="<%= path === '/user/downloaded' ? 'active' : '' %>" href="/user/downloaded">My Downloaded Files</a>
             </li>
+            <li class="main-header__item">
+                <a class="<%= path === '/user/notification' ? 'active' : '' %>" href="/user/notification">My Notifications</a>
+            </li>
+            <li class="main-header__item">
+                <a class="<%= path === '/user/request' ? 'active' : '' %>" href="/user/request">My Requests</a>
+            </li>
         </ul>
 
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
