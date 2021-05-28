@@ -40,6 +40,6 @@ router.post('/request-file/:ownerId/:fileName', userController2.requestFile);
 
 router.post('/grant-permission/:requesterId/:requestedFileId', userController2.grantPermission);
 
-router.post('/deny-permission/:requesterId', userController2.denyPermission);
+router.post('/deny-permission/:requesterId/:requestedFileId', userController2.denyPermission);
 
 module.exports = router;

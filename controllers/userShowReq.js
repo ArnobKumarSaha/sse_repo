@@ -7,6 +7,7 @@ const fs = require('fs');
 const encDec = require('../EncryptDecrypt-v2');
 
 const { ObjectID } = require('bson');
+const documents = require('../controllers/userUpDownDel').getDocuments();
 
 exports.showFileById = (req, res, next) =>{
   const fileId = req.params.myFileId;
@@ -35,11 +36,12 @@ exports.showFileById = (req, res, next) =>{
 
 exports.requestFile = async (req, res, next) =>{
     const ownerId = req.params.ownerId;
-    const fileName = req.params.fileName;
-  
+    const fileName = req.params.fileName; // the file path actually (without /public/files.)
     console.log("requesting file begins");
-    console.log(ownerId, fileName);
-  
+
+
+
+    //If it is his file.
     if(req.user._id == ownerId){
       return res.render('updown/searchResult', {
         pageTitle: "Search result",
@@ -48,15 +50,16 @@ exports.requestFile = async (req, res, next) =>{
         errorMessage: "This is your file man! "
       });
     }
-  
+
+
     const theFile = await File.findOne({filePath: fileName});
-  
     const owner = await User.findOne({_id: ownerId});
+
+
   
+    // Update the Owner's notification array.
     const updatedNotificationItems = [...owner.reqs.notifications];
-  
     console.log("theFile = ", theFile, "owner = ", owner, "updatedNoti = ", updatedNotificationItems);
-  
     updatedNotificationItems.push({
       requesterId: req.user._id,
       requestedFileId: theFile._id,
@@ -68,8 +71,12 @@ exports.requestFile = async (req, res, next) =>{
     console.log("updated noti = ", updatedNotificationItems, "updated reqs = ", updatedReqs);
     owner.reqs = updatedReqs;
     await owner.save();
+
+
+
   
     console.log('Done with reques file.');
+    // Show the search results to the User.
     res.render('updown/searchResult', {
       pageTitle: "Search result",
       path: "/user/searchResult",
@@ -82,19 +89,23 @@ exports.requestFile = async (req, res, next) =>{
 exports.grantPermission = async (req, res, next) =>{
   const requesterId = req.params.requesterId;
   const requestedFileId = req.params.requestedFileId;
-
   const theFile = await File.findOne({_id: requestedFileId});
   const requester = await User.findOne({_id: requesterId});
+  console.log("theFile = ", theFile, "requester = ", requester);
 
-  console.log("theFile = ", theFile, "owner = ", requester);
 
 
+  /*
   const plainDataFilePath = await encDec.getDecryptFile(theFile.filePath); //return output dont write
+  //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath);
   await encDec.getEncryptFileV2(requester.publicKey, plainDataFilePath); 
-
-
+  //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath); 
   let filePath = plainDataFilePath.split('/')[2];
-  //console.log(filePath);
+  */
+
+  
+  // I have commented out the above code Block to check whether the lower part of this line are correct or not.
+  let filePath = 'decryptedFile.txt';
 
   const updatedRequestedItems = [...requester.dcart.allRequests];
 
@@ -104,7 +115,6 @@ exports.grantPermission = async (req, res, next) =>{
     requestedFileId: theFile._id,
     fileContent: filePath
   });
-  //console.log(updatedRequestedItems);
   const updatedAllReqs = {
     allRequests: updatedRequestedItems
   };
@@ -112,13 +122,49 @@ exports.grantPermission = async (req, res, next) =>{
   requester.dcart = updatedAllReqs;
   await requester.save();
 
+
+
+  console.log(requester);
+
   //need to change
+
+  /*
+  let currentUser = await User.findOne({_id: req.user._id});
+  const updatedNotificationItems = [...currentUser.reqs.notifications];
+  let itemToBeSaved;
+  for(let item of updatedNotificationItems){
+    console.log('item -> ', item);
+    if(item.requesterId.equals(requesterId) && item.requestedFileId.equals(requestedFileId)){
+      item.decided = true;
+      itemToBeSaved = item;
+      break;
+    }
+  }
+  */
+
+  const query = {
+    'reqs.notifications': {
+      $elemMatch: {
+        requesterId: requesterId,
+        requestedFileId: requestedFileId
+      }
+    }
+  };
+
+  /*const fuckUser = await User.findOne(query);
+  console.log('\n',fuckUser,'\n');*/
+
+  await User.updateOne(query, {$set: {
+    'reqs.notifications.$.decided': true
+  }} );
+
   console.log('Done with Grant Permission.');
   res.redirect('/user/notification');
 }
 
 exports.denyPermission = async (req, res, next) =>{
   const requesterId = req.params.requesterId;
+  const requestedFileId = req.params.requestedFileId;
 
   const requester = await User.findOne({_id: requesterId});
 
@@ -128,8 +174,6 @@ exports.denyPermission = async (req, res, next) =>{
   updatedRequestedItems.push({
     isAccept: false,
     ownerId: req.user._id
-    //requestedFileId: ,
-    //fileContent: 
   });
   const updatedAllReqs = {
     allRequests: updatedRequestedItems
@@ -138,8 +182,22 @@ exports.denyPermission = async (req, res, next) =>{
   requester.dcart = updatedAllReqs;
   await requester.save();
 
+  console.log('\n', requester, '\n');
+
   //need to change
-  console.log('Done with Grant Permission.');
+  const query = {
+    'reqs.notifications': {
+      $elemMatch: {
+        requesterId: requesterId,
+        requestedFileId: requestedFileId
+      }
+    }
+  };
+  await User.updateOne(query, {$set: {
+    'reqs.notifications.$.decided': true
+  }} );
+
+  console.log('Done with Deny Permission.');
   res.redirect('/user/notification');
 }
 

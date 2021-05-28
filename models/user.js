@@ -17,7 +17,7 @@ const userSchema = new Schema({
     required: true
   },
   publicKey: {
-    type: String,
+    type: Buffer,
     required: true
   },
   cart: {

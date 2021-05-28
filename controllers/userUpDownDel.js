@@ -229,6 +229,8 @@ async function calculate1(space_separated_keywords){
   }
 }
 
+let sortable = [];
+let documents = [];
 // It makes the array sorted in descending order. To show more matched files before the less matched files.
 function calculate2(){
   sortable = [];
@@ -353,3 +355,6 @@ exports.deleteFile = async (req, res, next) => {
 }
 
 
+exports.getDocuments = function(){
+  return documents;
+}

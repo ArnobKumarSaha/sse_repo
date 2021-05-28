@@ -150,6 +150,7 @@ exports.getDecryptFile = (filePath) => {
   let prKey = fs.readFileSync('./keys/privateKey.key');
   const plainDataFilePath = './temp-file/decryptedFile.txt';
 
+  console.log('In the getDecryptFile(). ');
   console.log(filePath);
   console.log(fs.readFileSync('./public/files/'+filePath)); //its wrong completely
   const tempPath = './public/files/'+ filePath;

@@ -142,6 +142,8 @@ exports.postSignup = async (req,res, next) => {
 
   let pbKey = await fs.readFileSync('./keys/publicKey.key');
 
+  console.log(pbKey, typeof(pbKey) ); // This is buffer Object
+
   const user = new User({
     email: email,
     password: hashedPassword,
