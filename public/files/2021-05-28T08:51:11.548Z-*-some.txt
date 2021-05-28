@@ -1,0 +1,26 @@
+something
+
+    const keyHash = encDec.getKeywordHash(tmpKey);
+
+    KeywordIndex.findOne({index_hash: keyHash}).then(keyDoc => {
+      if(keyDoc){
+        let myfiles = [...keyDoc.whereItIs.myFiles];
+
+		for(var fl in myFiles){
+			var fp = fl.filePath;
+			console.log("Type = ", typeof(fp));
+
+			if(freqTable[fp]) {freqTable[fp]++; console.log("IN true.");}
+			else { freqTable[fp] = 1; console.log("In False. ", freqTable);}
+		}
+        
+      }
+      else{
+        console.log("nothing.")
+      }
+    });
+    
+    
+
+    
+    

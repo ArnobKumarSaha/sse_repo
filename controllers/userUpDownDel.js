@@ -70,7 +70,7 @@ exports.postUploadFile = async (req, res, next) =>{
 
   // which file has most common keyword set with the currently uploaded file.
   for (let [key,value] of Object.entries(bestMatchFiles) ){
-    console.log('printing :', key, value);
+    //console.log('printing :', key, value);
     matchCount = Math.max(value, matchCount);
   }
   let decide = false;
@@ -115,7 +115,7 @@ exports.postUploadFile = async (req, res, next) =>{
     }
   });
   newSavedFile = await newSavedFile.save();
-  console.log("\n newSavedFile1 = ", newSavedFile,"\n");
+  //console.log("\n newSavedFile1 = ", newSavedFile,"\n");
 
 
 
@@ -155,7 +155,7 @@ exports.postUploadFile = async (req, res, next) =>{
     }
     keyList.push({keyHashId: keyDoc._id});
   }
-  console.log("\n keyList = ", keyList, "\n");
+  //console.log("\n keyList = ", keyList, "\n");
 
 
 
@@ -163,43 +163,25 @@ exports.postUploadFile = async (req, res, next) =>{
   const updatedStore = {
     keywordsList: keyList
   };
-  console.log("updatedStore = ", updatedStore);
+  //console.log("updatedStore = ", updatedStore);
 
   const toCheckList = [...newSavedFile.store.keywordsList];
 
-  console.log("ToCheckList 1 = ", toCheckList);
+  //console.log("ToCheckList 1 = ", toCheckList);
 
   for(let obj of keyList){
     toCheckList.push(obj);
   }
 
-  console.log("ToCheckList 2 = ", toCheckList);
+  //console.log("ToCheckList 2 = ", toCheckList);
 
-  console.log("newSavedFile.store = ", newSavedFile.store);
+  //console.log("newSavedFile.store = ", newSavedFile.store);
   newSavedFile.store = updatedStore;
-  console.log("newSavedFile.store = ", newSavedFile.store);
-  console.log("\n newSavedFile2 = ", newSavedFile,"\n");
+  //console.log("newSavedFile.store = ", newSavedFile.store);
+  //console.log("\n newSavedFile2 = ", newSavedFile,"\n");
 
   newSavedFile = await newSavedFile.save();
-  console.log("\n newSavedFile3 = ", newSavedFile,"\n");
-
-/*
-  const updatedFileItems = [...this.cart.myFiles];
-  updatedFileItems.push({
-    myFileId: fileId
-  });
-
-    .then(result =>{
-      res.redirect('/user/uploaded');
-    });
-
-  };
-  const updatedCart = {
-    myFiles: updatedFileItems
-  };
-  this.cart = updatedCart;
-  return this.save();
-*/
+  //console.log("\n newSavedFile3 = ", newSavedFile,"\n");
 
 // Part 4: Updating to  User table.
   return req.user.addToCart(newSavedFile._id)
@@ -229,14 +211,13 @@ async function calculate1(space_separated_keywords){
     const keyHash = await encDec.getKeywordHash(tmpKey);
 
     const keyDoc = await KeywordIndex.findOne({index_hash: keyHash});
-
-    //console.log("keyDoc = ", keyDoc);
     if(keyDoc){
       let myfiles = [...keyDoc.whereItIs.myFiles];
 
-      for(var fl of myfiles){
-        var fp = fl.filePath;
+      for(let fl of myfiles){
 
+        let temp = await File.findOne({_id: fl.fileId});
+        let fp = temp.filePath; 
         if(freqTable[fp]==1) {freqTable[fp]++;}
         else { freqTable[fp] = 1;}
       }
@@ -249,7 +230,7 @@ async function calculate1(space_separated_keywords){
 }
 
 // It makes the array sorted in descending order. To show more matched files before the less matched files.
-/*function calculate2(){
+function calculate2(){
   sortable = [];
   documents = [];
   return new Promise( (resolve, reject) =>{
@@ -262,20 +243,6 @@ async function calculate1(space_separated_keywords){
     });
 
     resolve(sortable);
-    //console.log("Calculate function ends. (After resolve) ", freqTable, typeof(freqTable) );
-  });
-}*/
-
-var sortable = [];
-var documents = [];
-function calculate2(){
-  sortable = [];
-  documents = [];
-  for (var file in freqTable) {
-      sortable.push([file, freqTable[file]]);
-  }
-  sortable.sort(function(a, b) {
-      return b[1] - a[1];
   });
 }
 
@@ -284,12 +251,11 @@ async function intermediateFunction(space_separated_keywords){
   await calculate1(space_separated_keywords);
   await calculate2();
 
-  console.log(sortable);
+  console.log('sortable = ', sortable);
 
   for(let doc of sortable){
     //const userDoc = await User.findOne({ "cart.myFiles.filePath": doc[0]},  {name: 1} );
     const fileDoc = await File.findOne({ filePath: doc[0]});
-    console.log("fileDoc = ", fileDoc);
     console.log(fileDoc._id);
     const userDoc = await User.findOne({ "cart.myFiles.myFileId": fileDoc._id} );
     console.log("useDoc = ", userDoc);
@@ -348,19 +314,15 @@ exports.deleteFile = async (req, res, next) => {
 
   //Going through the keyword list of this file, and update them accordingly.
   for(let hashId of theFile.store.keywordsList){
-    console.log("_id & hashId from file.store are = ", hashId);
+    //console.log("_id & hashId from file.store are = ", hashId);
     let keyHash = await KeywordIndex.findOne({_id: hashId.keyHashId});
 
-    console.log("\n keyHash = ", keyHash, "\n");
-
-    /*const updatedList = await keyHash.whereItIs.myFiles.filter(item => {
-      return item.fileId != theFile._id;
-    });*/
+    //console.log("\n keyHash = ", keyHash, "\n");
 
     let updatedList = [];
     for(let something of keyHash.whereItIs.myFiles){
       if(something.fileId.equals(theFile._id) ){
-        console.log('\n If statement\n');
+        //console.log('\n If statement\n');
       }
       else{
         updatedList.push(something);
