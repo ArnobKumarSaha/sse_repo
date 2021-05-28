@@ -185,7 +185,6 @@ exports.postUploadFile = async (req, res, next) =>{
   newSavedFile = await newSavedFile.save();
   console.log("\n newSavedFile3 = ", newSavedFile,"\n");
 
-
 /*
   const updatedFileItems = [...this.cart.myFiles];
   updatedFileItems.push({
@@ -204,11 +203,13 @@ exports.postUploadFile = async (req, res, next) =>{
   return this.save();
 */
 
-
-
-
 // Part 4: Updating to  User table.
-return req.user.addToCart(newSavedFile._id)  
+  return req.user.addToCart(newSavedFile._id)
+    .then(result=>{
+      res.redirect('/user/uploaded');
+    });
+
+};
 
 // About Download file ..................................................................
 
@@ -219,10 +220,9 @@ exports.getDownloadFile = (req, res, next) =>{
   });
 }
 
-var freqTable = {};
-
 // It finds out the entries from DB those are matched with searched keywords.
 // Then finds out the file path, And count the frequencies.
+var freqTable = {};
 async function calculate1(space_separated_keywords){
 
   freqTable = {};
@@ -249,8 +249,6 @@ async function calculate1(space_separated_keywords){
     }
   }
 }
-var sortable = [];
-var documents = [];
 
 // It makes the array sorted in descending order. To show more matched files before the less matched files.
 /*function calculate2(){
@@ -270,6 +268,8 @@ var documents = [];
   });
 }*/
 
+var sortable = [];
+var documents = [];
 function calculate2(){
   sortable = [];
   documents = [];
@@ -316,12 +316,6 @@ exports.postDownloadFile = async (req, res, next) =>{
     errorMessage: ""
   });
 }
-
-
-
-
-
-
 
 
 // Rendering Uploaded and downloaded files...................................................
@@ -560,6 +554,5 @@ exports.getAllRequests = (req, res, next) =>{
 
 exports.showDecryptedFileContent = (req, res, next) =>{
   const content = req.params.fileContent;
-
-  
+  res.redirect('/user/notification');
 }
