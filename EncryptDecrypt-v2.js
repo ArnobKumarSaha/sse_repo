@@ -130,16 +130,16 @@ exports.getEncryptFile = (pbKey,  filePath) => {
 };
 
 //It is for encrypting owner's file data with requester's public key -also output is in HEX
-exports.getEncryptFileV2 = (pbKey, /* filePath */) => {  
-  return new Promise( (resolve, reject) => {
+exports.getEncryptFileV2 = (pbKey, filePath ) => {  
+  return new Promise( (resolve) => {
 
     //Store publicKey.key as key file
     //Also pass publicKey.key the file here as a parameter
     //let pbKey = fs.readFileSync('./keys/publicKey.key');
-    let fileP = './temp-file/decryptedFile.txt';
+    let againEncryptedfileP = './temp-file/againEncryptFile.txt';
     console.log("Inside encryptFileV2: ");    
-    console.log("file data: ", fs.readFileSync(fileP).toString('hex'));
-    fs.readFile(fileP, "utf-8" /*"Binary" */, (err, data) => {    //Store publicKey.key as key file
+    console.log("file data: ", fs.readFileSync(filePath).toString('hex'));
+    fs.readFile(filePath, "utf-8" /* "Binary" */ , (err, data) => {    //Store publicKey.key as key file
       //Also pass publicKey.key the file here as a parameter
       //let pbKey = fs.readFileSync('./keys/publicKey.key');
       
@@ -155,58 +155,65 @@ exports.getEncryptFileV2 = (pbKey, /* filePath */) => {
         Buffer.from(data)
       )
 
-      fs.writeFile(fileP, encryptedData.toString('hex'), (error) => {
+      fs.writeFile(againEncryptedfileP, encryptedData.toString('hex'), (error) => {
         if (error) console.log(error);
         //console.log("Inside WriteFile:" + encryptedData.toString('hex'));
         console.log("Inside encryptFileV2: writeFile");
         console.log("File Successfully Encrypted."); 
-      }); 
+      });
+      resolve(againEncryptedfileP); 
     });
       //const encryptedData2 = fs.readFileSync(filePath);
       //return encryptedData2.toString('hex');
-    resolve();
+    //resolve(againEncryptedfileP);
   });
     //const encryptedData2 = fs.readFileSync(filePath);
     //return encryptedData2.toString('hex');
 };
 
 exports.getDecryptFile = (filePath) => {
-  return new Promise( (resolve, reject) => {
-
-    let prKey = fs.readFileSync('./keys/privateKey.key');
+  return new Promise( (resolve) => {
+    
     const plainDataFileP = './temp-file/decryptedFile.txt';
+    //let prKey = fs.readFileSync('./keys/privateKey.key'); //toString??
+    fs.readFile('./keys/privateKey.key', 'utf8', (err, prKey)=> {
+    
+      console.log(prKey);
 
-    console.log('In the getDecryptFile(). ');
-    console.log(filePath);
-    console.log(fs.readFileSync('./public/files/'+filePath)); //its wrong completely
-    const tempPath = './public/files/'+ filePath;
+      console.log('In the getDecryptFile(). ');
+      console.log(filePath);
+      console.log(fs.readFileSync('./public/files/'+filePath)); //its wrong completely
+      const tempPath = './public/files/'+ filePath;
 
-    fs.readFile(tempPath, (err, encryptedData) => {
-      console.log('In the getDecryptFile(). readFile ');
-      const decryptedData = crypto.privateDecrypt(
-        {
-          key: prKey,
-          passphrase: 'sse',
-          padding: crypto.constants.RSA_PKCS8_OAEP_PADDING,
-          oaepHash: "sha256",
-        },
-        encryptedData
-      )
-        fs.writeFile(plainDataFileP, decryptedData , (error) => {
-        console.log('In the getDecryptFile(). writeFile ');      
-        if (error) console.log(error);
-        console.log(decryptedData);
-        console.log("Successfully decrypted.");
-      }); 
+      fs.readFile(tempPath, (err, encryptedData) => {
+      
+        const decryptedData = crypto.privateDecrypt(
+          {
+            key: prKey,
+            passphrase: 'sse',
+            padding: crypto.constants.RSA_PKCS8_OAEP_PADDING,
+            oaepHash: "sha256",
+          },
+          encryptedData
+        )
+          fs.writeFile(plainDataFileP, decryptedData , (error) => {
+          console.log('In the getDecryptFile(). writeFile ');      
+          if (error) console.log(error);
+          console.log(decryptedData);
+          console.log("Successfully decrypted.");
+        }); 
+      });
+      resolve(plainDataFileP);
     });  
     console.log('In the getDecryptFile(). outer read-write: ', console.log(fs.readFileSync(plainDataFileP).toString('hex')));
-    resolve();
+    //resolve(plainDataFileP);
   });
     //return plainDataFilePath;
 };
 
 exports.getDecryptFileContent = (fileContent) => {
-  let prKey = fs.readFileSync('./keys/privateKeyAlice.key');
+  console.log("File Content: "+ fileContent);
+  let prKey = fs.readFileSync('./keys/privateKey.key');
 
   const plainData = crypto.privateDecrypt(
     {

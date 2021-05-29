@@ -85,10 +85,10 @@ exports.requestFile = async (req, res, next) =>{
     });
   }
 
-function fudai(){
+function fudai(p){
   return new Promise((resolve, reject) => {
-    fs.readFile('./temp-file/decryptedFile.txt', 'utf8', (err, data)=> {
-      console.log('Inside fudai.');
+    fs.readFile(p, (err, data)=> { //can not be utf8
+      console.log('Inside fudai.. data:'+ data.toString());
       resolve(data);
     });
   });
@@ -107,13 +107,13 @@ exports.grantPermission = async (req, res, next) =>{
   //const plainDataFilePath = await encDec.getDecryptFile(theFile.filePath); //return output dont write
   //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath);
   //await encDec.getEncryptFileV2(requester.publicKey.toString(), plainDataFilePath); //Problem Lies Here
-  await encDec.getDecryptFile(theFile.filePath);
-  await encDec.getEncryptFileV2(requester.publicKey.toString());
+  const plainDataFilePath = await encDec.getDecryptFile(theFile.filePath);
+  const fpath = await encDec.getEncryptFileV2(requester.publicKey, plainDataFilePath);
   //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath); 
   //let filePath = plainDataFilePath;
   //console.log('Encryted with requester pbKey:' + fs.readFileSync(filePath).toString());
   
-  let encryptedContent = await fudai();
+  //let encryptedContent = await fudai(fpath);
   
   // I have commented out the above code Block to check whether the lower part of this line are correct or not.
   //let filePath = 'decryptedFile.txt';
@@ -124,7 +124,7 @@ exports.grantPermission = async (req, res, next) =>{
     isAccept: true,
     ownerId: req.user._id,
     requestedFileId: theFile._id,
-    fileContent: encryptedContent
+    fileContent: await fudai(fpath) //encryptedContent
   });
   const updatedAllReqs = {
     allRequests: updatedRequestedItems
