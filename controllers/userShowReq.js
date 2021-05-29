@@ -104,19 +104,14 @@ exports.grantPermission = async (req, res, next) =>{
 
   
   
-  //const plainDataFilePath = await encDec.getDecryptFile(theFile.filePath); //return output dont write
-  //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath);
-  //await encDec.getEncryptFileV2(requester.publicKey.toString(), plainDataFilePath); //Problem Lies Here
+  //const plainDataFilePath = await encDec.getDecryptFile(theFile.filePath); 
+  //await encDec.getEncryptFileV2(requester.publicKey.toString(), plainDataFilePath); 
   const plainDataFilePath = await encDec.getDecryptFile(theFile.filePath);
   const fpath = await encDec.getEncryptFileV2(requester.publicKey, plainDataFilePath);
-  //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath); 
-  //let filePath = plainDataFilePath;
-  //console.log('Encryted with requester pbKey:' + fs.readFileSync(filePath).toString());
+
   
   //let encryptedContent = await fudai(fpath);
   
-  // I have commented out the above code Block to check whether the lower part of this line are correct or not.
-  //let filePath = 'decryptedFile.txt';
 
   const updatedRequestedItems = [...requester.dcart.allRequests];
 

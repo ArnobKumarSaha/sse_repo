@@ -61,14 +61,13 @@ exports.generateKeys = () => {
 
 
 exports.getKeywordHash = (keyword) => {
-    keyword_hash = crypto.createHmac('sha256', indexKey)
+    let keyword_hash = crypto.createHmac('sha256', indexKey)
                         .update(keyword)
                         .digest('hex')
     return keyword_hash
   };
 
-exports.getEncryptionKeyword = (pbKey, keyword) => {     //send publickey as a parameter 
-  //Store publicKey.key as key file
+exports.getEncryptionKeyword = (pbKey, keyword) => {      
   //Also pass publicKey.key the file here as a parameter
   //let pbKey = fs.readFileSync('./keys/publicKey.key');
 
@@ -139,9 +138,7 @@ exports.getEncryptFileV2 = (pbKey, filePath ) => {
     let againEncryptedfileP = './temp-file/againEncryptFile.txt';
     console.log("Inside encryptFileV2: ");    
     console.log("file data: ", fs.readFileSync(filePath).toString('hex'));
-    fs.readFile(filePath, "utf-8" , (err, data) => {    //Store publicKey.key as key file
-      //Also pass publicKey.key the file here as a parameter
-      //let pbKey = fs.readFileSync('./keys/publicKey.key');
+    fs.readFile(filePath, "utf-8" , (err, data) => {    
       
       console.log("Inside encryptFileV2: readFile");
 
@@ -157,18 +154,11 @@ exports.getEncryptFileV2 = (pbKey, filePath ) => {
 
       fs.writeFile(againEncryptedfileP, encryptedData.toString('hex'), (error) => {
         if (error) console.log(error);
-        //console.log("Inside WriteFile:" + encryptedData.toString('hex'));
-        console.log("Inside encryptFileV2: writeFile");
         console.log("File Successfully Encrypted."); 
       });
       resolve(againEncryptedfileP); 
     });
-      //const encryptedData2 = fs.readFileSync(filePath);
-      //return encryptedData2.toString('hex');
-    //resolve(againEncryptedfileP);
   });
-    //const encryptedData2 = fs.readFileSync(filePath);
-    //return encryptedData2.toString('hex');
 };
 
 exports.getDecryptFile = (filePath) => {
@@ -178,11 +168,9 @@ exports.getDecryptFile = (filePath) => {
     //let prKey = fs.readFileSync('./keys/privateKey.key'); //toString??
     fs.readFile('./keys/privateKey.key', 'utf8', (err, prKey)=> {
     
-      console.log(prKey);
-
       console.log('In the getDecryptFile(). ');
       console.log(filePath);
-      console.log(fs.readFileSync('./public/files/'+filePath)); //its wrong completely
+
       const tempPath = './public/files/'+ filePath;
 
       fs.readFile(tempPath, (err, encryptedData) => {
@@ -204,10 +192,7 @@ exports.getDecryptFile = (filePath) => {
         }); 
         resolve(plainDataFileP);
       });
-      //resolve(plainDataFileP);
     });  
-    console.log('In the getDecryptFile(). outer read-write: ', console.log(fs.readFileSync(plainDataFileP).toString('hex')));
-    //resolve(plainDataFileP);
   });
     //return plainDataFilePath;
 };

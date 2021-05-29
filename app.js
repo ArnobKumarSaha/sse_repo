@@ -21,14 +21,6 @@ const User = require('./models/user');
 
 const encDec = require('./EncryptDecrypt-v2');
 const fs = require('fs');
-//fs.readFile('./temp-file/againEncryptFile.txt', 'hex',(err, data)=> { 
-//  console.log('Inside fudai.. data:' + data);
-//});
-//encDec.getEncryptFile(fs.readFileSync('./keys/publicKey.key'),'./public/files/test.txt');
-//encDec.getDecryptFile('test.txt');
-
-//encDec.getEncryptFileV2(fs.readFileSync('./keys/publicKeyAlice.key').toString(),'./temp-file/decryptedFile.txt');
-console.log(encDec.getDecryptFileContent(fs.readFileSync('./temp-file/againEncryptFile.txt').toString()));
 
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
