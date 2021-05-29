@@ -139,7 +139,7 @@ exports.getEncryptFileV2 = (pbKey, filePath ) => {
     let againEncryptedfileP = './temp-file/againEncryptFile.txt';
     console.log("Inside encryptFileV2: ");    
     console.log("file data: ", fs.readFileSync(filePath).toString('hex'));
-    fs.readFile(filePath, "utf-8" /* "Binary" */ , (err, data) => {    //Store publicKey.key as key file
+    fs.readFile(filePath, "utf-8" , (err, data) => {    //Store publicKey.key as key file
       //Also pass publicKey.key the file here as a parameter
       //let pbKey = fs.readFileSync('./keys/publicKey.key');
       
@@ -202,8 +202,9 @@ exports.getDecryptFile = (filePath) => {
           console.log(decryptedData);
           console.log("Successfully decrypted.");
         }); 
+        resolve(plainDataFileP);
       });
-      resolve(plainDataFileP);
+      //resolve(plainDataFileP);
     });  
     console.log('In the getDecryptFile(). outer read-write: ', console.log(fs.readFileSync(plainDataFileP).toString('hex')));
     //resolve(plainDataFileP);

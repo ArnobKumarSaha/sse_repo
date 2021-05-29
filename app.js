@@ -28,7 +28,7 @@ const fs = require('fs');
 //encDec.getDecryptFile('test.txt');
 
 //encDec.getEncryptFileV2(fs.readFileSync('./keys/publicKeyAlice.key').toString(),'./temp-file/decryptedFile.txt');
-//console.log(encDec.getDecryptFileContent(fs.readFileSync('./temp-file/againEncryptFile.txt').toString()));
+console.log(encDec.getDecryptFileContent(fs.readFileSync('./temp-file/againEncryptFile.txt').toString()));
 
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
