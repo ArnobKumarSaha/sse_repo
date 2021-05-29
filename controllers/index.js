@@ -92,6 +92,7 @@ exports.postLogin = (req,res, next) => {
     .catch(err => console.log(err));
 }
 
+
 exports.getSignup = (req,res, next) => {
     let message = req.flash('error');
     if (message.length > 0) {
@@ -111,6 +112,16 @@ exports.getSignup = (req,res, next) => {
       },
       validationErrors: []
     });
+}
+
+// Make a function in index.js controller.
+function fudai(){
+  return new Promise((resolve, reject) => {
+    fs.readFile('./keys/publicKey.key', 'utf8', (err, data)=> {
+      console.log('Inside fudai.');
+      resolve(data);
+    });
+  });
 }
 
 exports.postSignup = async (req,res, next) => {
@@ -138,9 +149,10 @@ exports.postSignup = async (req,res, next) => {
   // If no error, encrypt the password, and save the user into database.
   const hashedPassword = await bcrypt.hash(password, 12);
 
-  encDec.generateKeys();
+  await encDec.generateKeys();
 
-  let pbKey = await fs.readFileSync('./keys/publicKey.key');
+  let pbKey = await fudai();
+  //let pbKey = await encDec.generateKeys();
 
   console.log(pbKey, typeof(pbKey) ); // This is buffer Object
 

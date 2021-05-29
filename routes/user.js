@@ -30,7 +30,7 @@ router.get('/show-file/:myFileId', userController2.showFileById);
 router.get('/notification', userController2.getAllNotifications);
 
 
-router.get('/show-decrypted-content/:request.fileContent', userController2.showDecryptedFileContent);
+router.get('/show-decrypted-content/:fileContent', userController2.showDecryptedFileContent);
 
 router.get('/request', userController2.getAllRequests);
 

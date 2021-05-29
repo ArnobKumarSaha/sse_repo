@@ -84,28 +84,39 @@ exports.requestFile = async (req, res, next) =>{
       errorMessage: "Requset has been sent to the DataOwner. "
     });
   }
-  
+
+function fudai(){
+  return new Promise((resolve, reject) => {
+    fs.readFile('./temp-file/decryptedFile.txt', 'utf8', (err, data)=> {
+      console.log('Inside fudai.');
+      resolve(data);
+    });
+  });
+}  
   
 exports.grantPermission = async (req, res, next) =>{
   const requesterId = req.params.requesterId;
   const requestedFileId = req.params.requestedFileId;
   const theFile = await File.findOne({_id: requestedFileId});
   const requester = await User.findOne({_id: requesterId});
-  console.log("theFile = ", theFile, "requester = ", requester);
+  console.log("theFile = ", theFile, "requester = ", requester, "requester public key = ", requester.publicKey);
 
-
-
-  /*
-  const plainDataFilePath = await encDec.getDecryptFile(theFile.filePath); //return output dont write
-  //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath);
-  await encDec.getEncryptFileV2(requester.publicKey, plainDataFilePath); 
-  //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath); 
-  let filePath = plainDataFilePath.split('/')[2];
-  */
 
   
+  
+  //const plainDataFilePath = await encDec.getDecryptFile(theFile.filePath); //return output dont write
+  //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath);
+  //await encDec.getEncryptFileV2(requester.publicKey.toString(), plainDataFilePath); //Problem Lies Here
+  await encDec.getDecryptFile(theFile.filePath);
+  await encDec.getEncryptFileV2(requester.publicKey.toString());
+  //console.log('plainDataFilePath in grantPermission() = ', plainDataFilePath); 
+  //let filePath = plainDataFilePath;
+  //console.log('Encryted with requester pbKey:' + fs.readFileSync(filePath).toString());
+  
+  let encryptedContent = await fudai();
+  
   // I have commented out the above code Block to check whether the lower part of this line are correct or not.
-  let filePath = 'decryptedFile.txt';
+  //let filePath = 'decryptedFile.txt';
 
   const updatedRequestedItems = [...requester.dcart.allRequests];
 
@@ -113,7 +124,7 @@ exports.grantPermission = async (req, res, next) =>{
     isAccept: true,
     ownerId: req.user._id,
     requestedFileId: theFile._id,
-    fileContent: filePath
+    fileContent: encryptedContent
   });
   const updatedAllReqs = {
     allRequests: updatedRequestedItems
@@ -227,5 +238,14 @@ exports.getAllRequests = (req, res, next) =>{
 
 exports.showDecryptedFileContent = (req, res, next) =>{
   const content = req.params.fileContent;
-  res.redirect('/user/notification');
+  //console.log(fs.readFileSync('./public/files/rosalind.txt').toString());
+  console.log(content);
+
+  const plainData = encDec.getDecryptFileContent(content);
+
+  res.render("updown/showDecryptedContent",{
+    pageTitle: "File Content",
+    path: "/user/request",
+    documents: plainData
+  })
 }

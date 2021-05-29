@@ -19,10 +19,7 @@
                                 </header>
 
                                 <div class="card__actions">
-                                    <form action="/user/show-decrypted-content/<%= request.fileContent%>" method="GET">
-                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                        <button class="btn" type="submit">Show Content</button>
-                                    </form>
+                                    <a href="/user/show-decrypted-content/<%= request.fileContent%>" class="btn">Show Content</a> 
     
                                 </div>
 

@@ -20,7 +20,9 @@ const User = require('./models/user');
 
 
 const encDec = require('./EncryptDecrypt-v2');
+//const fs = require('fs');
 
+//encDec.getEncryptFileV2(fs.readFileSync('./keys/publicKeyAlice.key').toString(),'./temp-file/decryptedFile.txt');
 
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {

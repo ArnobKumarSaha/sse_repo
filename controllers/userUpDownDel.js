@@ -40,7 +40,7 @@ exports.postUploadFile = async (req, res, next) =>{
 
 
   // encrypt the file, store it to the same path
-  encDec.getEncryptFile(/* req.user.publicKey, */ tempPath);
+  encDec.getEncryptFile(req.user.publicKey, tempPath);
   tempPath = file.path.split('/')[2];
   // this is to store in the user.cart.myFiles
   let encryptedKeyword = encDec.getEncryptionKeyword(req.user.publicKey, keyword);
