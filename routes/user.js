@@ -30,7 +30,7 @@ router.get('/show-file/:myFileId', userController2.showFileById);
 router.get('/notification', userController2.getAllNotifications);
 
 
-router.get('/show-decrypted-content/:request.fileContent', userController2.showDecryptedFileContent);
+router.get('/show-decrypted-content/:fileContent/:noncePlain/:nonceGet', userController2.showDecryptedFileContent);
 
 router.get('/request', userController2.getAllRequests);
 
@@ -40,6 +40,6 @@ router.post('/request-file/:ownerId/:fileName', userController2.requestFile);
 
 router.post('/grant-permission/:requesterId/:requestedFileId', userController2.grantPermission);
 
-router.post('/deny-permission/:requesterId', userController2.denyPermission);
+router.post('/deny-permission/:requesterId/:requestedFileId', userController2.denyPermission);
 
 module.exports = router;

@@ -15,8 +15,12 @@
                                 <h1 class="user__name">
                                     Requester Id : <%= notification.requesterId %>
                                 </h1>
+                                <h3 class="user__email">
+                                    requestedFileId : <%= notification.requestedFileId %>
+                                </h3>
                             </header>
 
+                            <% if(notification.decided == false) { %>
 
                             <div class="card__actions">
                                 <form action="/user/grant-permission/<%= notification.requesterId%>/<%= notification.requestedFileId %>" method="POST">
@@ -27,12 +31,18 @@
                             </div>
 
                             <div class="card__actions">
-                                <form action="/user/deny-permission/<%= notification.requesterId%>" method="POST">
+                                <form action="/user/deny-permission/<%= notification.requesterId%>/<%= notification.requestedFileId %>" method="POST">
                                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                     <button class="btn" type="submit">Deny</button>
                                 </form>
-
                             </div>
+
+                            <% } else { %>
+
+                                <div class="card__actions">
+                                    <h3> Already decided. </h3>
+                                </div>
+                            <% } %>
 
                         </article>
                         <% } %>

@@ -40,9 +40,10 @@ exports.postUploadFile = async (req, res, next) =>{
 
 
   // encrypt the file, store it to the same path
-  encDec.getEncryptFile(/* req.user.publicKey, */ tempPath);
+  encDec.getEncryptFile(req.user.publicKey, tempPath);
   tempPath = file.path.split('/')[2];
   // this is to store in the user.cart.myFiles
+  console.log("Here in PostUplod public key of owner: " + req.user.publicKey);
   let encryptedKeyword = encDec.getEncryptionKeyword(req.user.publicKey, keyword);
   let space_separated_keywords = keyword.split(' ');
 
@@ -229,6 +230,8 @@ async function calculate1(space_separated_keywords){
   }
 }
 
+let sortable = [];
+let documents = [];
 // It makes the array sorted in descending order. To show more matched files before the less matched files.
 function calculate2(){
   sortable = [];
@@ -353,3 +356,6 @@ exports.deleteFile = async (req, res, next) => {
 }
 
 
+exports.getDocuments = function(){
+  return documents;
+}

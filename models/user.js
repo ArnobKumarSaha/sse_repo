@@ -32,17 +32,20 @@ const userSchema = new Schema({
       {
         requesterId: {type: Schema.Types.ObjectId, required: true},
         requestedFileId: {type: Schema.Types.ObjectId, required: true},
-        decided: {type: Boolean, required: true}
+        decided: {type: Boolean, required: true},
+        nonce: {type: String, required: false},
       }
     ]
   },
   dcart: {
     allRequests: [
       {
-        isAccept: {type: Boolean, required: true},
+        isAccept: {type: Number, required: true},
         ownerId: {type: Schema.Types.ObjectId, required: false},
         requestedFileId: {type: Schema.Types.ObjectId, required: false},
-        fileContent: {type: String, required: false}
+        fileContent: {type: String, required: false},
+        noncePlain: {type: String, required: false}, //plain random number as string
+        nonceGet: {type: String, required: false}
       }
     ]
   }

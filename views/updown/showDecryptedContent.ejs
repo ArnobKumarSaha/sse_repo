@@ -6,7 +6,12 @@
         <%- include('../includes/navigation.ejs') %>
 
             <main>
-                <h4> <%= fileContent %> </h4>
+                <% if (verification == true) { %>
+                    <h4> <%= documents %> </h4>
+                <% } else { %>
+                    <h2 style="color:red;">ALART!!!</h2>
+                    <h4>File is not received from the actual owner. File content can be compromised</h4>
+                <% } %>
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             </main>
             <%- include('../includes/end.ejs') %>
