@@ -56,14 +56,37 @@ exports.requestFile = async (req, res, next) =>{
     const owner = await User.findOne({_id: ownerId});
 
 
+
+
+    //here is pushing nonce --starts
+    let nonce = await encDec.generateNonce(); //use random number or string -- but output must be in string
+    const updatedRequestedItems = [...req.user.dcart.allRequests];
+    updatedRequestedItems.push({
+      isAccept: 0,
+      ownerId: ownerId,
+      requestedFileId: theFile._id,
+      noncePlain: encDec.getKeywordHash(nonce),
+      fileContent: null,
+      nonceGet: null
+    });
+    const updatedAllReqs = {
+      allRequests: updatedRequestedItems
+    };
+    //console.log(updatedAllReqs);
+    req.user.dcart = updatedAllReqs;
+    await req.user.save();
+    //here is pushing nonce --ends
   
+
+
     // Update the Owner's notification array.
     const updatedNotificationItems = [...owner.reqs.notifications];
     console.log("theFile = ", theFile, "owner = ", owner, "updatedNoti = ", updatedNotificationItems);
     updatedNotificationItems.push({
       requesterId: req.user._id,
       requestedFileId: theFile._id,
-      decided: false
+      decided: false,
+      nonce: await encDec.getEncryptNonce(owner.publicKey, nonce) 
     });
     const updatedReqs = {
       notifications: updatedNotificationItems
@@ -93,6 +116,18 @@ function fudai(p){
     });
   });
 }  
+
+function findNonce(notifications,requesterId,requestedFileId){
+  return new Promise((resolve) => {
+    for(let item of notifications){
+      console.log('item -> ', item);
+      if(item.requesterId.equals(requesterId) && item.requestedFileId.equals(requestedFileId) && item.decided == false){
+        console.log('Nonce -> ', item.nonce);
+        resolve(item.nonce);
+      }
+    }
+  });
+} 
   
 exports.grantPermission = async (req, res, next) =>{
   const requesterId = req.params.requesterId;
@@ -112,13 +147,45 @@ exports.grantPermission = async (req, res, next) =>{
   
   //let encryptedContent = await fudai(fpath);
   
+  //for nonce
+  //just for test:
+  //let N = await encDec.getDecryptNonce(await encDec.getEncryptNonce(req.user.publicKey, "122"));
+  //console.log("Nonce Testing: " + N);
 
-  const updatedRequestedItems = [...requester.dcart.allRequests];
+  let currentUser = await User.findOne({_id: req.user._id});
+  const notifications = [...currentUser.reqs.notifications];
+  const nonce = await findNonce(notifications, requesterId, requestedFileId);
+
+  let againEncryptedNonce = await encDec.getEncryptNonce(requester.publicKey, await encDec.getDecryptNonce(nonce));
+
+  //object already EXISTS......Dont push UPDATE::::STARTS
+  const queryRequest = {
+    'dcart.allRequests': {
+      $elemMatch: {
+        isAccept: 0,
+        ownerId: req.user._id,
+        requestedFileId: requestedFileId
+      }
+    }
+  };
+  console.log("Result for queryRequest: ", await User.findOne(queryRequest));
+  await User.update(queryRequest, {$set: {
+    'dcart.allRequests.$.isAccept': 2,
+    'dcart.allRequests.$.fileContent': await fudai(fpath),
+    'dcart.allRequests.$.nonceGet': againEncryptedNonce
+  }} );
+//object already EXISTS......Dont push UPDATE::::ENDS
+
+
+
+//cmnt starts here for nonce addinf purpose
+/*   const updatedRequestedItems = [...requester.dcart.allRequests];
 
   updatedRequestedItems.push({
-    isAccept: true,
+    isAccept: 2,
     ownerId: req.user._id,
     requestedFileId: theFile._id,
+    nonceSent: againEncryptedNonce, 
     fileContent: await fudai(fpath) //encryptedContent
   });
   const updatedAllReqs = {
@@ -127,8 +194,8 @@ exports.grantPermission = async (req, res, next) =>{
   //console.log(updatedAllReqs);
   requester.dcart = updatedAllReqs;
   await requester.save();
-
-
+ */
+//cmt ends here --- for nonce adding purpuse
 
   console.log(requester);
 
@@ -157,8 +224,6 @@ exports.grantPermission = async (req, res, next) =>{
     }
   };
 
-  /*const fuckUser = await User.findOne(query);
-  console.log('\n',fuckUser,'\n');*/
 
   await User.updateOne(query, {$set: {
     'reqs.notifications.$.decided': true
@@ -176,17 +241,44 @@ exports.denyPermission = async (req, res, next) =>{
 
   const updatedRequestedItems = [...requester.dcart.allRequests];
 
+  //for nonce
+  let currentUser = await User.findOne({_id: req.user._id});
+  const notifications = [...currentUser.reqs.notifications];
+  const nonce = await findNonce(notifications, requesterId, requestedFileId);
+
+  let againEncryptedNonce = await encDec.getEncryptNonce(requester.publicKey, await encDec.getDecryptNonce(nonce));
+
+  //object already EXISTS......Dont push UPDATE::::STARTS
+  const queryRequest = {
+    'dcart.allRequests': {
+      $elemMatch: {
+        isAccept: 0,
+        ownerId: req.user._id,
+        requestedFileId: requestedFileId
+      }
+    }
+  };
+  console.log("Result for queryRequest: ", await User.findOne(queryRequest));
+  await User.update(queryRequest, {$set: {
+    'dcart.allRequests.$.isAccept': 1,
+    'dcart.allRequests.$.nonceGet': againEncryptedNonce
+  }} );
+  //object already EXISTS......Dont push UPDATE::::ENDS
+
+  // For using Nonce - we dont push already added object - we update it -- start
   //console.log(updatedRequestedItems);
-  updatedRequestedItems.push({
-    isAccept: false,
-    ownerId: req.user._id
+/*   updatedRequestedItems.push({
+    isAccept: 1,
+    ownerId: req.user._id,
+    nonceSent: againEncryptedNonce
   });
   const updatedAllReqs = {
     allRequests: updatedRequestedItems
   };
 
   requester.dcart = updatedAllReqs;
-  await requester.save();
+  await requester.save(); */
+  // For using Nonce - we dont push already added object - we update it -- end 
 
   console.log('\n', requester, '\n');
 
@@ -231,16 +323,31 @@ exports.getAllRequests = (req, res, next) =>{
   })
 }
 
-exports.showDecryptedFileContent = (req, res, next) =>{
-  const content = req.params.fileContent;
-  //console.log(fs.readFileSync('./public/files/rosalind.txt').toString());
-  console.log(content);
+function verifyNonce(noncePlain, plainNonce){
+  let verify = false;
+  if(JSON.stringify(noncePlain) == JSON.stringify(encDec.getKeywordHash(plainNonce))){
+    verify = true;
+  }
+  return verify;
+} 
 
-  const plainData = encDec.getDecryptFileContent(content);
+exports.showDecryptedFileContent = async(req, res, next) =>{
+  const content = req.params.fileContent;
+  const noncePlain = req.params.noncePlain;
+  const nonceGet = req.params.nonceGet;
+  //console.log(fs.readFileSync('./public/files/rosalind.txt').toString());
+  //console.log(nonceGet);
+
+  let plainNonce = await encDec.getDecryptNonce(nonceGet);
+  let verify = verifyNonce(noncePlain, plainNonce);
+  console.log(verify);
+
+  const plainData = await encDec.getDecryptFileContent(content);
 
   res.render("updown/showDecryptedContent",{
     pageTitle: "File Content",
     path: "/user/request",
-    documents: plainData
+    documents: plainData,
+    verification: verify
   })
 }

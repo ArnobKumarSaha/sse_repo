@@ -140,7 +140,7 @@ exports.getEncryptFileV2 = (pbKey, filePath ) => {
     console.log("file data: ", fs.readFileSync(filePath).toString('hex'));
     fs.readFile(filePath, "utf-8" , (err, data) => {    
       
-      console.log("Inside encryptFileV2: readFile");
+
 
       const encryptedData = crypto.publicEncrypt(
         {
@@ -155,8 +155,9 @@ exports.getEncryptFileV2 = (pbKey, filePath ) => {
       fs.writeFile(againEncryptedfileP, encryptedData.toString('hex'), (error) => {
         if (error) console.log(error);
         console.log("File Successfully Encrypted."); 
+        resolve(againEncryptedfileP); 
       });
-      resolve(againEncryptedfileP); 
+      //resolve(againEncryptedfileP); 
     });
   });
 };
@@ -189,8 +190,9 @@ exports.getDecryptFile = (filePath) => {
           if (error) console.log(error);
           console.log(decryptedData);
           console.log("Successfully decrypted.");
+          resolve(plainDataFileP);
         }); 
-        resolve(plainDataFileP);
+        //resolve(plainDataFileP);
       });
     });  
   });
@@ -198,19 +200,75 @@ exports.getDecryptFile = (filePath) => {
 };
 
 exports.getDecryptFileContent = (fileContent) => {
-  console.log("File Content: "+ fileContent);
-  let prKey = fs.readFileSync('./keys/privateKey.key');
+  return new Promise((resolve)=> {
+    console.log("File Content: "+ fileContent);
+    fs.readFile('./keys/privateKey.key', 'utf8', (err, prKey) => {
+      console.log('prKey = ', prKey, typeof(prKey));
 
-  const plainData = crypto.privateDecrypt(
-    {
-      key: prKey,
-      passphrase: 'sse',
-      padding: crypto.constants.RSA_PKCS8_OAEP_PADDING,
-      oaepHash: "sha256",
-    },
-    Buffer.from(fileContent,'hex')
-  )
+      const plainData = crypto.privateDecrypt(
+        {
+          key: prKey,
+          passphrase: 'sse',
+          padding: crypto.constants.RSA_PKCS8_OAEP_PADDING,
+          oaepHash: "sha256",
+        },
+        Buffer.from(fileContent,'hex')
+      )
+      
+      //console.log("decrypted data: ", keyword.toString());
+      resolve(plainData.toString() );
+  })
+  });
+}; 
+
+
+exports.generateNonce = () => {
+  return new Promise((resolve)=> {
+
+    crypto.randomInt(0, 1000000, (err, n) => {
+      if (err) throw err;
   
-  //console.log("decrypted data: ", keyword.toString());
-  return plainData.toString();
+      resolve(n.toString());
+    })
+  });
+}; 
+
+exports.getEncryptNonce = (pbKey, plainNonce) => {  
+  return new Promise( (resolve) => {
+    console.log("At Nonce Encrypt: plainNonce: " + plainNonce +" tpy: "+ typeof(plainNonce));
+
+    const encryptedNonce = crypto.publicEncrypt(
+      {
+        key: pbKey,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        oaepHash: "sha256",
+      },
+      
+      Buffer.from(plainNonce)
+    )
+    console.log("At Nonce Encrypt: encryptNonce: ", encryptedNonce.toString('hex') + " typ: " + typeof(encryptedNonce.toString('hex')));
+    resolve(encryptedNonce.toString('hex')); 
+  });
 };
+
+exports.getDecryptNonce = (encryptedNonce) => {
+  return new Promise( (resolve) => {
+    console.log("At Nonce decrypt: encryptedNonce: " + encryptedNonce +" tpy: "+ typeof(encryptedNonce));
+    console.log("At Nonce decrypt: encryptedNonce: buffer convert " + Buffer.from(encryptedNonce, 'hex') +" tpy: "+ typeof(Buffer.from(encryptedNonce, 'hex')));
+
+    fs.readFile('./keys/privateKey.key', 'utf8', (err, prKey)=> {
+      
+      const decryptedNonce = crypto.privateDecrypt(
+        {
+          key: prKey,
+          passphrase: 'sse',
+          padding: crypto.constants.RSA_PKCS8_OAEP_PADDING,
+          oaepHash: "sha256",
+        },
+        Buffer.from(encryptedNonce, 'hex') //should use buffer???
+      )
+      console.log("At Nonce decrypt: decryptedNonce: " + decryptedNonce.toString() +" tpy: "+ typeof(decryptedNonce.toString()));
+      resolve(decryptedNonce.toString());
+    });  
+  });   
+}
