@@ -7,6 +7,11 @@ const User = require('../models/user');
 const encDec = require('../EncryptDecrypt-v2');
 
 const fs = require('fs');
+const path = require('path');
+
+let publicKeyPath = path.join(__dirname, '..', 'keys', 'publicKey.key');
+
+const util = require('util');
 
 
 
@@ -113,6 +118,16 @@ exports.getSignup = (req,res, next) => {
     });
 }
 
+function fudai(){
+  return new Promise((resolve, reject) => {
+    console.log(publicKeyPath);
+    fs.readFile(publicKeyPath, 'utf8', (err, data)=> {
+      //console.log('Inside fudai. ',data);
+      resolve(data);
+    });
+  });
+}
+
 exports.postSignup = async (req,res, next) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -138,11 +153,14 @@ exports.postSignup = async (req,res, next) => {
   // If no error, encrypt the password, and save the user into database.
   const hashedPassword = await bcrypt.hash(password, 12);
 
-  encDec.generateKeys();
+  //util.promisify(encDec.generateKeys() );
+  await encDec.generateKeys();
 
-  let pbKey = await fs.readFileSync('./keys/publicKey.key');
+  console.log('After executing generateKeys().')
 
-  console.log(pbKey, typeof(pbKey) ); // This is buffer Object
+  let pbKey = await fudai();
+
+  console.log('Here I am. ' , pbKey, typeof(pbKey) ); // This is buffer Object
 
   const user = new User({
     email: email,

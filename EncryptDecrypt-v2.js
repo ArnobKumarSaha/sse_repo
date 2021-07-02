@@ -12,43 +12,54 @@ let indexKey = "9uZlGXa0o64kdbQ6Gb96qw=="
 let publicKeyPath = './keys/publicKey.key'
 let privateKeyPath = './keys/privateKey.key'
 
+const util = require('util');
 
 // Calling generateKeyPair() method
 // with its parameters
 exports.generateKeys = () => {
-  generateKeyPair('rsa', {
-    modulusLength: 2048, // options
-    publicExponent: 0x10101,
-    publicKeyEncoding: {
-       type: 'pkcs1',
-       format: 'pem'
-    },
-    privateKeyEncoding: {
-       type: 'pkcs8', 
-       format: 'pem',
-       cipher: 'aes-192-cbc',
-       passphrase: 'sse'
-    }
- }, (err, PublicKey, PrivateKey) => { // Callback function
-    if(!err)
-    {
-        fs.writeFile(publicKeyPath, PublicKey.toString('hex'), (er) => {
-          if (er) console.log(er);
-          console.log("Key Successfully Saved.");
-        });
 
-        fs.writeFile(privateKeyPath, PrivateKey.toString('hex'), (er) => {
-          if (er) console.log(er);
-          console.log("Key Successfully Saved.");
-        });
+  return new Promise( (resolve, reject) => {
 
-    }
-    else
-    {
-       // Prints error if any
-       console.log("Errr is: ", err);
-    }
- });
+    generateKeyPair('rsa', {
+      modulusLength: 2048, // options
+      publicExponent: 0x10101,
+      publicKeyEncoding: {
+         type: 'pkcs1',
+         format: 'pem'
+      },
+      privateKeyEncoding: {
+         type: 'pkcs8', 
+         format: 'pem',
+         cipher: 'aes-192-cbc',
+         passphrase: 'sse'
+      }
+   }, (err, PublicKey, PrivateKey) => { // Callback function
+      if(!err)
+      {
+          fs.writeFile(publicKeyPath, PublicKey.toString('hex'), (er) => {
+            if (er) console.log(er);
+            console.log("publicKey Successfully Saved.");
+
+            fs.writeFile(privateKeyPath, PrivateKey.toString('hex'), (er) => {
+              if (er) console.log(er);
+              console.log("privateKey Successfully Saved.");
+
+              resolve();
+              
+            });
+          });
+  
+      }
+      else
+      {
+         // Prints error if any
+         console.log("Errr is: ", err);
+         reject();
+      }
+   });
+
+  })
+
 };
 
 
