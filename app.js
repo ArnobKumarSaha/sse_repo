@@ -130,7 +130,11 @@ mongoose
     }
   )
   .then(result =>{
-    app.listen(port, ()=> console.info("App listening on port: " , port))
+    // IN THE CASE OF SIMPLE RUN, WITHOUT DOCKER
+    //app.listen(port, ()=> console.info("App listening on port: " , port));
+
+    // IN CASE, YOU USE DOCKER.  process.env.PORT is taken from Dockerfile.
+    app.listen(process.env.PORT, ()=> console.info("App listening on port: " , process.env.PORT))
     console.log("Yesss ! MongoDb is connected.");
   })
   .catch(err =>{
